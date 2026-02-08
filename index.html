@@ -3,327 +3,366 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mafia: Interactive Narrator</title>
+    <title>Mafia Moderator: One Hang Edition</title>
     <style>
         :root {
-            --bg: #0f0f0f;
+            --bg: #0d0d0d;
             --card: #1a1a1a;
-            --primary: #d32f2f;
-            --secondary: #1976d2;
-            --text: #e0e0e0;
+            --primary: #c62828;
+            --secondary: #1565c0;
+            --text: #ffffff;
+            --accent: #ff8f00;
         }
-
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg); color: var(--text);
             margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* --- HEADER --- */
         .header { padding: 15px; background: #000; text-align: center; border-bottom: 1px solid #333; }
-        .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 3px; color: var(--primary); text-transform: uppercase; }
+        .header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); text-transform: uppercase; letter-spacing: 3px; }
 
-        /* --- SCREENS --- */
-        .screen {
-            flex: 1; display: none; flex-direction: column;
-            padding: 20px; overflow-y: auto; animation: fadeIn 0.3s ease;
-        }
+        .screen { flex: 1; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
         .screen.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- UI ELEMENTS --- */
-        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 15px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        .p-btn {
-            background: #252525; border: 1px solid #444; color: white;
-            padding: 15px; border-radius: 8px; text-align: center; cursor: pointer;
-        }
-        .p-btn.selected { background: var(--primary); border-color: white; font-weight: bold; }
-        .p-btn.dead { opacity: 0.3; text-decoration: line-through; pointer-events: none; }
-
         .btn {
-            background: var(--primary); color: white; border: none; padding: 18px;
+            background: var(--primary); color: white; border: none; padding: 16px;
             border-radius: 10px; font-size: 1.1rem; font-weight: bold; width: 100%;
-            cursor: pointer; box-shadow: 0 4px 0 #800; margin-top: 10px;
+            cursor: pointer; margin-top: 10px; box-shadow: 0 4px 0 #7f0000;
+            transition: all 0.1s;
         }
-        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #800; }
-        .btn-sec { background: var(--secondary); box-shadow: 0 4px 0 #0d47a1; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #7f0000; }
+        .btn-blue { background: var(--secondary); box-shadow: 0 4px 0 #0d47a1; }
+        .btn-blue:disabled { background: #333; box-shadow: none; color: #666; cursor: not-allowed; }
 
         input[type="text"] {
-            width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #444;
-            background: #222; color: white; font-size: 1rem; margin-bottom: 10px;
+            width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #444;
+            background: #252525; color: white; font-size: 1rem; margin-bottom: 10px; outline: none;
         }
 
-        .role-tag { font-size: 2rem; color: var(--primary); font-weight: 900; margin: 10px 0; }
-        .narrator-msg { font-style: italic; color: #888; text-align: center; margin: 10px 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .p-btn {
+            background: #262626; padding: 20px 10px; border-radius: 8px; border: 2px solid #333;
+            text-align: center; font-size: 1rem; cursor: pointer; color: #fff;
+        }
+        .p-btn.selected { border-color: var(--primary); background: #3d1a1a; font-weight: bold; }
+        .p-btn.dead { opacity: 0.3; text-decoration: line-through; pointer-events: none; }
+
+        .big-text { font-size: 1.3rem; text-align: center; margin: 15px 0; color: #bbb; line-height: 1.4; }
+        .highlight { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="header"><h1>Mafia Narrator</h1></div>
+    <div class="header"><h1>Mafia Moderator</h1></div>
 
-    <div id="scr-setup" class="screen active">
+    <div id="s-setup" class="screen active">
         <div class="card">
-            <h2>Players</h2>
+            <h2>Add Players</h2>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="in-name" placeholder="Name" onkeydown="if(event.key==='Enter') addP()">
                 <button class="btn" style="width:auto; margin:0;" onclick="addP()">+</button>
             </div>
-            <div id="p-tags" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+            <div id="list-p" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
         </div>
         <div class="card">
             <h2>Special Roles</h2>
-            <label style="display:block; margin:10px 0;"><input type="checkbox" id="chk-pol" checked> Police 👮</label>
-            <label style="display:block; margin:10px 0;"><input type="checkbox" id="chk-doc" checked> Doctor 🚑</label>
-            <label style="display:block; margin:10px 0;"><input type="checkbox" id="chk-drk"> Drunkard 🍺</label>
+            <label style="display:block; padding:10px;"><input type="checkbox" id="c-pol" checked> Police 🕵️</label>
+            <label style="display:block; padding:10px;"><input type="checkbox" id="c-doc" checked> Doctor 🚑</label>
+            <label style="display:block; padding:10px;"><input type="checkbox" id="c-drk"> Drunkard 🍺</label>
         </div>
-        <button class="btn" onclick="startGame()">Start Game</button>
+        <button class="btn" onclick="startGame()">Deal Roles</button>
     </div>
 
-    <div id="scr-reveal" class="screen">
-        <h2 id="rev-user" style="text-align:center;">Pass to Player</h2>
-        <div class="card" style="text-align:center; min-height:200px; display:flex; flex-direction:column; justify-content:center;">
-            <div id="rev-box" style="display:none;">
-                <div id="rev-role" class="role-tag">ROLE</div>
-                <p id="rev-desc">Description</p>
+    <div id="s-reveal" class="screen">
+        <h2 style="text-align:center;">Private Reveal</h2>
+        <div class="card" style="text-align:center; flex:1; display:flex; flex-direction:column; justify-content:center;">
+            <p>Pass the device to:</p>
+            <h1 id="rev-name" class="highlight" style="font-size:2.5rem;">Name</h1>
+            <div id="rev-box" style="display:none; margin-top:20px; border-top:1px solid #333; padding-top:20px;">
+                <div id="rev-role" style="font-size:2rem; font-weight:900; color:var(--accent);">ROLE</div>
+                <p id="rev-desc" style="color:#aaa; font-style:italic;"></p>
             </div>
         </div>
-        <button id="btn-rev" class="btn" onclick="doReveal()">Reveal Role</button>
+        <button id="btn-rev" class="btn" onclick="doReveal()">Reveal Secret Identity</button>
     </div>
 
-    <div id="scr-pass" class="screen">
+    <div id="s-pass" class="screen">
         <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
-            <h2 id="pass-title">NIGHT</h2>
-            <p id="pass-instruction" style="font-size:1.5rem;">Pass device to Mafia</p>
+            <div style="font-size:4rem; margin-bottom:20px;">🌑</div>
+            <h2 id="night-title">Night Phase</h2>
+            <p id="pass-txt" class="big-text">Waiting for everyone to close eyes...</p>
         </div>
-        <button class="btn" onclick="openAction()">I am ready</button>
+        <button id="btn-night-action" class="btn" onclick="startTurn()">I Am Ready</button>
     </div>
 
-    <div id="scr-action" class="screen">
-        <h2 id="act-role-title" style="text-align:center; color:var(--primary);">MAFIA</h2>
-        <p class="narrator-msg" id="act-voice-text">The Narrator is speaking...</p>
+    <div id="s-action" class="screen">
+        <h2 id="act-role" style="text-align:center; color:var(--primary);">MAFIA</h2>
+        <p id="act-prompt" style="text-align:center; color:#888;">Select your target</p>
         <div id="act-grid" class="grid"></div>
-        <button id="btn-confirm" class="btn" onclick="confirmAct()">Confirm Choice</button>
+        <button id="btn-act" class="btn" onclick="confirmAction()">Confirm Selection</button>
     </div>
 
-    <div id="scr-day" class="screen">
-        <h2 style="text-align:center;">MORNING</h2>
-        <div class="card" id="day-report" style="font-size:1.2rem; text-align:center; border-left:5px solid var(--primary);">
-            Reporting...
+    <div id="s-police" class="screen">
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
+            <h2 style="color:var(--secondary);">Investigation Result</h2>
+            <h1 id="pol-res" style="font-size:4rem; margin:20px 0;">???</h1>
+            <p style="color:#666;">Keep this secret from the group.</p>
         </div>
-        <div id="day-grid" class="grid"></div>
-        <button class="btn btn-sec" onclick="voteOut()">Vote Someone Out (Trial)</button>
-        <button class="btn" onclick="startNight()">Start Next Night</button>
+        <button class="btn" onclick="endTurn()">I Have Seen. Sleep.</button>
+    </div>
+
+    <div id="s-day" class="screen">
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:3rem;">☀️</div>
+            <h2 style="margin:5px;">Morning Phase</h2>
+            <div class="card" id="day-log" style="font-weight:bold; color:var(--accent);"></div>
+        </div>
+        <h3>Village List</h3>
+        <div id="day-grid" class="grid" style="margin-bottom:20px;"></div>
+        
+        <button id="btn-vote-hang" class="btn btn-blue" onclick="openVoting()">Vote to Hang (Once per Day)</button>
+        <button class="btn" onclick="setupNight()" style="background:#444; box-shadow:0 4px 0 #222;">End Day & Start Night</button>
+    </div>
+
+    <div id="s-vote" class="screen">
+        <h2 style="text-align:center; color:var(--primary);">Who shall be hanged?</h2>
+        <p style="text-align:center; color:#777;">Select the accused player</p>
+        <div id="vote-grid" class="grid"></div>
+        <button class="btn btn-blue" style="margin-top:20px; background:#444;" onclick="show('s-day')">Cancel</button>
     </div>
 
     <script>
-        // --- DATA ---
-        let players = JSON.parse(localStorage.getItem('mafia_names')) || [];
-        let deck = []; // {name, role, alive:true}
-        let nightLog = { kill: null, save: null };
-        let queue = [];
-        let qIdx = 0;
+        // --- GAME STATE ---
+        let players = JSON.parse(localStorage.getItem('maf_p')) || [];
+        let deck = [];
+        let turnQueue = [];
+        let tIdx = 0;
+        let nightData = { kill: null, save: null };
+        let hangingThisRound = false; // Prevents multiple hangings
         const synth = window.speechSynthesis;
 
-        // --- SETUP ---
+        // --- SETUP LOGIC ---
         function addP() {
             let n = document.getElementById('in-name').value.trim();
-            if(n) { players.push(n); document.getElementById('in-name').value=''; renderSetup(); }
+            if(n) { players.push(n); document.getElementById('in-name').value=''; renderList(); }
         }
-        function renderSetup() {
-            document.getElementById('p-tags').innerHTML = players.map((p,i)=>`<div class="p-btn" style="padding:5px 10px;">${p} <span onclick="players.splice(${i},1);renderSetup()" style="color:red;">×</span></div>`).join('');
-            localStorage.setItem('mafia_names', JSON.stringify(players));
+        function renderList() {
+            document.getElementById('list-p').innerHTML = players.map((p,i)=>
+                `<div style="background:#222; padding:8px 12px; border-radius:6px; border:1px solid #333;">${p} <span onclick="remP(${i})" style="color:var(--primary); margin-left:10px; font-weight:bold; cursor:pointer;">×</span></div>`
+            ).join('');
+            localStorage.setItem('maf_p', JSON.stringify(players));
         }
-        renderSetup();
+        function remP(i) { players.splice(i,1); renderList(); }
+        renderList();
 
-        function speak(txt, callback) {
-            synth.cancel();
-            let u = new SpeechSynthesisUtterance(txt);
-            u.pitch = 0.8; u.rate = 0.9;
-            u.onend = callback;
-            synth.speak(u);
-        }
-
-        // --- GAME ENGINE ---
         function startGame() {
-            if(players.length < 3) return alert("Need 3+ players");
+            if(players.length < 3) return alert("Need 3+ players.");
             let roles = [];
             let mCount = Math.max(1, Math.floor(players.length/4));
             for(let i=0; i<mCount; i++) roles.push('Mafia');
-            if(document.getElementById('chk-pol').checked) roles.push('Police');
-            if(document.getElementById('chk-doc').checked) roles.push('Doctor');
-            if(document.getElementById('chk-drk').checked) roles.push('Drunkard');
+            if(document.getElementById('c-pol').checked) roles.push('Police');
+            if(document.getElementById('c-doc').checked) roles.push('Doctor');
+            if(document.getElementById('c-drk').checked) roles.push('Drunkard');
             while(roles.length < players.length) roles.push('Citizen');
             
-            roles.sort(()=>Math.random()-0.5);
-            deck = players.map((p,i)=>({name:p, role:roles[i], alive:true}));
+            roles.sort(() => Math.random() - 0.5);
+            deck = players.map((p, i) => ({ name: p, role: roles[i], alive: true }));
             
             revIdx = 0;
-            showScr('scr-reveal');
+            show('s-reveal');
             prepRev();
         }
 
-        // --- REVEAL ---
+        // --- REVEAL LOGIC ---
         let revIdx = 0;
         function prepRev() {
-            if(revIdx >= deck.length) return startNight();
-            document.getElementById('rev-user').innerText = `Pass to: ${deck[revIdx].name}`;
+            if(revIdx >= deck.length) return setupNight();
+            let p = deck[revIdx];
+            document.getElementById('rev-name').innerText = p.name;
             document.getElementById('rev-box').style.display = 'none';
-            document.getElementById('btn-rev').innerText = "Tap to Reveal";
-            document.getElementById('btn-rev').onclick = () => {
+            let btn = document.getElementById('btn-rev');
+            btn.innerText = "Tap to Reveal";
+            btn.onclick = () => {
                 document.getElementById('rev-box').style.display = 'block';
-                document.getElementById('rev-role').innerText = deck[revIdx].role;
-                document.getElementById('rev-desc').innerText = getDesc(deck[revIdx].role);
-                document.getElementById('btn-rev').innerText = "Hide & Next";
-                document.getElementById('btn-rev').onclick = () => { revIdx++; prepRev(); };
+                document.getElementById('rev-role').innerText = p.role;
+                document.getElementById('rev-desc').innerText = getDesc(p.role);
+                btn.innerText = "Understood. Hide Role.";
+                btn.onclick = () => { revIdx++; prepRev(); };
             };
         }
         function getDesc(r) {
-            if(r==='Mafia') return "Kill a citizen every night.";
-            if(r==='Police') return "Investigate a player every night.";
-            if(r==='Doctor') return "Save one player from death every night.";
-            if(r==='Drunkard') return "Act suspicious. If you are voted out, you win!";
-            return "Survive and vote out the Mafia.";
+            const d = {
+                'Mafia': 'Discuss and kill one person every night.',
+                'Police': 'Investigate one person to see if they are Mafia.',
+                'Doctor': 'Protect one person from being killed.',
+                'Drunkard': 'You win only if the village votes to hang you!',
+                'Citizen': 'Your goal is to find the Mafia and vote them out.'
+            };
+            return d[r] || "";
         }
 
-        // --- NIGHT ENGINE ---
-        function startNight() {
-            nightLog = { kill: null, save: null };
-            queue = [];
-            qIdx = 0;
-            if(deck.some(p=>p.role==='Mafia' && p.alive)) queue.push('Mafia');
-            if(deck.some(p=>p.role==='Doctor' && p.alive)) queue.push('Doctor');
-            if(deck.some(p=>p.role==='Police' && p.alive)) queue.push('Police');
+        // --- NIGHT CYCLE ---
+        function setupNight() {
+            nightData = { kill: null, save: null };
+            turnQueue = [];
+            tIdx = 0;
+            hangingThisRound = false; // Allow hanging tomorrow morning
 
-            speak("It is now night. Everyone, go to sleep.", () => {
-                nextInQueue();
-            });
+            if(deck.some(x => x.role == 'Mafia' && x.alive)) turnQueue.push('Mafia');
+            if(deck.some(x => x.role == 'Doctor' && x.alive)) turnQueue.push('Doctor');
+            if(deck.some(x => x.role == 'Police' && x.alive)) turnQueue.push('Police');
+
+            show('s-pass');
+            document.getElementById('pass-txt').innerText = "Everyone Go To Sleep";
+            let btn = document.getElementById('btn-night-action');
+            btn.innerText = "Start the Night Cycle";
+            btn.onclick = () => {
+                speak("It is night. Everyone, go to sleep.", () => { nextTurn(); });
+            };
         }
 
-        function nextInQueue() {
-            if(qIdx >= queue.length) return resolveNight();
-            let role = queue[qIdx];
-            document.getElementById('pass-instruction').innerText = `Pass device to: ${role}`;
-            showScr('scr-pass');
-            speak(`${role}, wake up.`);
-        }
-
-        function openAction() {
-            let role = queue[qIdx];
-            document.getElementById('act-role-title').innerText = role;
-            let prompt = "";
-            if(role==='Mafia') prompt = "Mafia, choose your victim.";
-            if(role==='Doctor') prompt = "Doctor, who are you protecting?";
-            if(role==='Police') prompt = "Police, who do you want to investigate?";
+        function nextTurn() {
+            if(tIdx >= turnQueue.length) return endNight();
+            let role = turnQueue[tIdx];
             
-            document.getElementById('act-voice-text').innerText = prompt;
-            renderGrid('act-grid', true);
-            showScr('scr-action');
+            show('s-pass');
+            document.getElementById('pass-txt').innerText = `Pass device to: ${role}`;
+            document.getElementById('btn-night-action').innerText = "I Am Ready";
+            document.getElementById('btn-night-action').onclick = () => { startAction(role); };
+        }
+
+        function startAction(role) {
+            show('s-action');
+            document.getElementById('act-role').innerText = role;
+            let prompt = `Wake up, ${role}. Choose your target.`;
+            document.getElementById('act-prompt').innerText = prompt;
             speak(prompt);
+            renderGrid('act-grid', true);
         }
 
         let selIdx = -1;
         function renderGrid(id, selectable) {
-            const container = document.getElementById(id);
-            container.innerHTML = '';
+            let div = document.getElementById(id);
+            div.innerHTML = '';
             selIdx = -1;
             deck.forEach((p, i) => {
-                const b = document.createElement('div');
+                let b = document.createElement('div');
                 b.className = `p-btn ${p.alive ? '' : 'dead'}`;
                 b.innerText = p.name;
                 if(selectable && p.alive) {
                     b.onclick = () => {
-                        document.querySelectorAll('.p-btn').forEach(x=>x.classList.remove('selected'));
+                        document.querySelectorAll('.p-btn').forEach(x => x.classList.remove('selected'));
                         b.classList.add('selected');
                         selIdx = i;
                     };
                 }
-                container.appendChild(b);
+                div.appendChild(b);
             });
         }
 
-        function confirmAct() {
+        function confirmAction() {
             if(selIdx === -1) return;
-            let role = queue[qIdx];
-            let target = deck[selIdx];
-
-            if(role==='Mafia') {
-                nightLog.kill = selIdx;
-                finishTurn();
-            } else if(role==='Doctor') {
-                nightLog.save = selIdx;
-                finishTurn();
-            } else if(role==='Police') {
-                let isMafia = target.role === 'Mafia';
-                let result = isMafia ? `This person is Mafia.` : `This person is a Citizen.`;
-                speak(result, () => {
-                    alert(result);
-                    finishTurn();
-                });
+            let role = turnQueue[tIdx];
+            if(role == 'Mafia') nightData.kill = selIdx;
+            if(role == 'Doctor') nightData.save = selIdx;
+            if(role == 'Police') {
+                let isMafia = deck[selIdx].role == 'Mafia';
+                show('s-police');
+                let res = document.getElementById('pol-res');
+                res.innerText = isBadResult(deck[selIdx].role) ? "MAFIA" : "CITIZEN";
+                res.style.color = isBadResult(deck[selIdx].role) ? "var(--primary)" : "#4caf50";
+                speak("The investigation is complete.");
+                return;
             }
+            endTurn();
         }
 
-        function finishTurn() {
-            speak(`${queue[qIdx]}, go back to sleep.`, () => {
-                qIdx++;
-                nextInQueue();
+        function isBadResult(role) { return role === 'Mafia'; }
+
+        function endTurn() {
+            let role = turnQueue[tIdx];
+            speak(`${role}, go back to sleep.`, () => {
+                tIdx++;
+                nextTurn();
             });
         }
 
-        // --- RESOLVE ---
-        function resolveNight() {
-            let deathName = null;
-            if(nightLog.kill !== null && nightLog.kill !== nightLog.save) {
-                deck[nightLog.kill].alive = false;
-                deathName = deck[nightLog.kill].name;
+        // --- MORNING ---
+        function endNight() {
+            let victim = null;
+            if(nightData.kill !== null && nightData.kill !== nightData.save) {
+                deck[nightData.kill].alive = false;
+                victim = deck[nightData.kill].name;
             }
 
-            showScr('scr-day');
+            let msg = victim ? `A tragedy occurred. ${victim} was found dead.` : `A miracle occurred! Nobody died tonight.`;
+            document.getElementById('day-log').innerText = msg;
+            
+            show('s-day');
+            document.getElementById('btn-vote-hang').disabled = false; // New round, allow voting
             renderGrid('day-grid', false);
-            
-            let report = deathName ? `A tragedy occurred. ${deathName} was killed.` : `A miracle occurred. No one died last night.`;
-            document.getElementById('day-report').innerText = report;
-            
-            speak(`Everyone, wake up. It is now morning. ${report}`);
+            speak(`Everyone wake up. ${msg}`);
             checkWin();
         }
 
-        function voteOut() {
-            let n = prompt("Enter the name of the player to eliminate:");
-            let p = deck.find(x => x.name.toLowerCase() === n?.toLowerCase() && x.alive);
-            if(!p) return alert("Player not found or already dead.");
+        // --- HANGING SYSTEM ---
+        function openVoting() {
+            if(hangingThisRound) return;
+            show('s-vote');
+            let div = document.getElementById('vote-grid');
+            div.innerHTML = '';
+            deck.forEach((p, i) => {
+                if(!p.alive) return;
+                let b = document.createElement('div');
+                b.className = 'p-btn';
+                b.innerText = p.name;
+                b.style.borderColor = 'var(--secondary)';
+                b.onclick = () => confirmHang(i);
+                div.appendChild(b);
+            });
+        }
 
-            if(p.role === 'Drunkard') {
-                speak(`The village has made a mistake! ${p.name} was the Drunken Idiot. He wins!`);
-                alert(`${p.name} was the Drunkard! He wins the game!`);
-                return location.reload();
+        function confirmHang(i) {
+            let p = deck[i];
+            if(confirm(`Eliminate ${p.name}? This is final for today.`)) {
+                if(p.role === 'Drunkard') {
+                    speak(`${p.name} was the Drunken Idiot! They win the game!`);
+                    alert("GAME OVER: Drunkard Wins!");
+                    return location.reload();
+                }
+                p.alive = false;
+                hangingThisRound = true; // LOCK HANGING FOR TODAY
+                document.getElementById('btn-vote-hang').disabled = true; 
+                
+                speak(`${p.name} has been hanged.`);
+                show('s-day');
+                renderGrid('day-grid', false);
+                document.getElementById('day-log').innerText = `${p.name} was voted out.`;
+                checkWin();
             }
-
-            p.alive = false;
-            speak(`${p.name} has been eliminated.`);
-            renderGrid('day-grid', false);
-            checkWin();
         }
 
         function checkWin() {
-            let maf = deck.filter(x=>x.role==='Mafia' && x.alive).length;
-            let civ = deck.filter(x=>x.role!=='Mafia' && x.alive).length;
-
-            if(maf === 0) {
-                speak("The Mafia has been wiped out. Civilians win!");
-                alert("Civilians Win!");
-                location.reload();
-            } else if(maf >= civ) {
-                speak("The Mafia has overtaken the town. Mafia wins!");
-                alert("Mafia Win!");
-                location.reload();
-            }
+            let m = deck.filter(x => x.role == 'Mafia' && x.alive).length;
+            let c = deck.filter(x => x.role != 'Mafia' && x.alive).length;
+            if(m == 0) { speak("All Mafia have been eliminated. Civilians win!"); alert("CIVILIANS WIN!"); location.reload(); }
+            else if(m >= c) { speak("The Mafia outnumber the town. Mafia wins!"); alert("MAFIA WINS!"); location.reload(); }
         }
 
-        function showScr(id) {
-            document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        // --- NARRATOR CORE ---
+        function speak(txt, cb) {
+            synth.cancel();
+            let u = new SpeechSynthesisUtterance(txt);
+            u.rate = 0.9; u.pitch = 0.8;
+            if(cb) u.onend = cb;
+            synth.speak(u);
+        }
+        function show(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
     </script>
