@@ -3,273 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mafia Game Master</title>
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mafia Moderator</title>
     <style>
+        /* --- APP THEME & RESET --- */
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --accent-color: #d32f2f; /* Blood Red */
-            --btn-text: #ffffff;
-            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --primary: #ef5350; /* Red */
+            --text-main: #ffffff;
+            --text-dim: #b0b0b0;
+            --success: #66bb6a;
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            font-family: var(--font-main);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        h1 { color: var(--accent-color); font-size: 1.5rem; letter-spacing: 2px; text-transform: uppercase; margin-top: 15px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         
-        .container {
-            width: 100%;
-            max-width: 480px; /* Mobile width optimized */
-            padding: 20px;
-            padding-bottom: 40px;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            overflow: hidden; /* Prevent scroll bounce */
+        }
+
+        /* --- LAYOUT --- */
+        .app-header {
+            padding: 15px;
+            text-align: center;
+            background: rgba(30, 30, 30, 0.9);
+            border-bottom: 1px solid #333;
+            z-index: 10;
+        }
+        .app-header h1 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); }
+
+        .screen-container {
             flex: 1;
+            position: relative;
+            overflow: hidden;
         }
 
-        /* --- PANELS (SCREENS) --- */
-        .panel {
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            animation: slideUp 0.4s ease-out;
-        }
-        .panel.active { display: flex; }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- UI ELEMENTS --- */
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
+        .screen {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(20px);
+            overflow-y: auto;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateX(0);
+        }
+
+        /* --- UI COMPONENTS --- */
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             border: 1px solid #333;
         }
 
-        .input-group { display: flex; gap: 10px; }
+        /* Inputs */
+        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
         input[type="text"] {
             flex: 1;
-            padding: 14px;
+            padding: 12px;
             border-radius: 8px;
             border: 1px solid #444;
-            background: #252525;
+            background: #2c2c2c;
             color: white;
-            font-size: 1rem;
+            font-size: 16px; /* Prevents zoom on iOS */
+            outline: none;
         }
-
-        .player-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        
+        /* Tags */
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .tag {
             background: #333;
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 0.9rem;
-            border: 1px solid #444;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .tag span { color: var(--accent-color); font-weight: bold; cursor: pointer; padding: 5px; }
-
-        /* --- TOGGLES --- */
-        .role-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            background: #252525;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            gap: 8px;
         }
-        input[type="checkbox"] { transform: scale(1.4); accent-color: var(--accent-color); }
+        .tag span { color: var(--primary); font-weight: bold; padding: 4px; }
 
-        /* --- GAMEPLAY CARDS --- */
-        .game-card-img {
-            width: 60%;
-            max-width: 180px;
-            height: auto;
+        /* Toggles */
+        .toggle-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        input[type="checkbox"] { transform: scale(1.5); accent-color: var(--primary); }
+
+        /* Game Images */
+        .role-card-img {
+            width: 160px;
             border-radius: 8px;
-            margin: 0 auto 15px auto;
             display: block;
-            box-shadow: 0 0 20px rgba(0,0,0,0.6);
-        }
-        
-        .big-text {
-            font-size: 1.4rem;
-            text-align: center;
-            line-height: 1.5;
-            margin: 10px 0;
-            min-height: 80px; /* Prevent jumpiness */
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 0 auto 15px auto;
+            border: 2px solid #444;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
 
-        .status-bar {
-            height: 4px;
+        /* Progress Bar */
+        .progress-container {
+            height: 6px;
             background: #333;
-            width: 100%;
-            border-radius: 2px;
-            margin: 15px 0;
+            border-radius: 3px;
+            margin-top: 15px;
             overflow: hidden;
         }
-        .progress {
+        .progress-bar {
             height: 100%;
-            background: var(--accent-color);
             width: 0%;
+            background: var(--primary);
             transition: width 0.1s linear;
         }
 
-        /* --- BUTTONS --- */
-        button {
-            background: var(--accent-color);
+        /* Buttons */
+        .btn {
+            background: var(--primary);
             color: white;
             border: none;
             padding: 16px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1.1rem;
             font-weight: 700;
-            cursor: pointer;
             width: 100%;
-            touch-action: manipulation;
-            transition: transform 0.1s, opacity 0.2s;
+            margin-top: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #b71c1c;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
-        button:active { transform: scale(0.98); opacity: 0.8; }
-        button.secondary { background: #444; margin-top: 10px; font-size: 1rem; }
-        button:disabled { background: #555; cursor: not-allowed; opacity: 0.5; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b71c1c; }
+        .btn:disabled { background: #444; color: #888; box-shadow: none; transform: none; }
+        .btn-secondary { background: #424242; box-shadow: 0 4px 0 #212121; }
+        .btn-secondary:active { box-shadow: 0 2px 0 #212121; }
+        .btn-small { width: auto; padding: 0 20px; margin: 0; }
 
-        .hidden { display: none !important; }
+        /* Typography */
+        h2 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--text-dim); text-transform: uppercase; }
+        .big-text { font-size: 1.5rem; text-align: center; margin: 20px 0; line-height: 1.4; min-height: 3em; display: flex; align-items: center; justify-content: center; }
+        .phase-label { text-align: center; color: var(--primary); letter-spacing: 2px; font-weight: bold; margin-bottom: 5px; display: block; }
+
     </style>
 </head>
 <body>
 
-    <h1>Mafia Moderator</h1>
+    <div class="app-header">
+        <h1>Mafia Master</h1>
+    </div>
 
-    <div class="container">
+    <div class="screen-container">
         
-        <div id="screen-setup" class="panel active">
+        <div id="screen-setup" class="screen active">
             <div class="card">
-                <h3 style="margin-top:0">Players</h3>
-                <div class="input-group">
-                    <input type="text" id="player-input" placeholder="Add Name (e.g. Sarah)" onkeydown="if(event.key==='Enter') addPlayer()">
-                    <button onclick="addPlayer()" style="width: auto;">+</button>
+                <h2>Players</h2>
+                <div class="input-row">
+                    <input type="text" id="player-name" placeholder="Name" onkeydown="if(event.key==='Enter') addPlayer()">
+                    <button class="btn btn-small" onclick="addPlayer()">+</button>
                 </div>
-                <div id="player-list" class="player-tags"></div>
+                <div id="player-list" class="tags"></div>
             </div>
 
             <div class="card">
-                <h3 style="margin-top:0">Special Roles</h3>
-                <div class="role-row">
-                    <label>Mafia (Aces)</label>
-                    <input type="checkbox" checked disabled>
-                </div>
-                <div class="role-row">
-                    <label>Police (Kings)</label>
+                <h2>Roles</h2>
+                <div class="toggle-row">
+                    <span>Police (King)</span>
                     <input type="checkbox" id="role-police" checked>
                 </div>
-                <div class="role-row">
-                    <label>Doctor (Queens)</label>
+                <div class="toggle-row">
+                    <span>Doctor (Queen)</span>
                     <input type="checkbox" id="role-doctor" checked>
                 </div>
-                <div class="role-row">
-                    <label>Mayor (x2 Vote)</label>
+                <div class="toggle-row">
+                    <span>Mayor (x2 Vote)</span>
                     <input type="checkbox" id="role-mayor">
                 </div>
-                <div class="role-row">
-                    <label>Drunkard</label>
-                    <input type="checkbox" id="role-drunk">
-                </div>
             </div>
 
-            <button onclick="startGameSetup()">Deal Cards & Start</button>
-            <button class="secondary" onclick="resetData()">Reset Everything</button>
+            <div style="flex:1"></div> <button class="btn" onclick="startGame()">Deal Cards & Play</button>
+            <button class="btn btn-secondary" onclick="resetPlayers()">Clear Names</button>
         </div>
 
-        <div id="screen-reveal" class="panel">
-            <h2 style="text-align: center;">Identity Phase</h2>
-            <div class="card" style="text-align: center;">
-                <h3 id="pass-instruction" style="color: var(--accent-color);">Pass to Player</h3>
-                
-                <div id="secret-card-area" class="hidden">
-                    <img id="card-img" class="game-card-img" src="" alt="Card">
-                    <h2 id="card-role" style="margin: 5px 0;">ROLE</h2>
-                    <p id="card-desc" style="color: #aaa; font-style: italic;">Description</p>
-                </div>
-
-                <div style="height: 20px;"></div> <button id="btn-reveal" onclick="handleRevealClick()">Reveal Identity</button>
-            </div>
-        </div>
-
-        <div id="screen-game" class="panel">
-            <div class="card">
-                <h4 style="text-align:center; color:#777; margin:0;" id="game-phase-label">NIGHT PHASE</h4>
-                
-                <div class="big-text" id="narrator-text">
-                    Ready to start...
-                </div>
-
-                <div class="status-bar"><div class="progress" id="progress-bar"></div></div>
-
-                <button id="btn-action" onclick="runGameStep()">Start Night</button>
-            </div>
+        <div id="screen-reveal" class="screen">
+            <h2 style="text-align: center; margin-bottom: 20px;">Identity Phase</h2>
             
-            <button class="secondary" onclick="location.reload()">End Game / New Round</button>
+            <div class="card" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+                <h3 id="pass-instruction" style="color: var(--primary); margin-bottom: 20px;">Pass Phone to...</h3>
+                
+                <div id="secret-area" style="display: none; animation: fadeIn 0.3s;">
+                    <img id="card-img" class="role-card-img" src="">
+                    <div id="card-role" style="font-size: 1.8rem; font-weight: bold; margin-bottom: 10px;">ROLE</div>
+                    <div id="card-desc" style="color: var(--text-dim); font-style: italic;">Desc</div>
+                </div>
+
+                <div style="flex:1; min-height: 20px;"></div>
+                
+                <button id="btn-reveal" class="btn" onclick="handleReveal()">Reveal</button>
+            </div>
+        </div>
+
+        <div id="screen-game" class="screen">
+            <span id="game-phase" class="phase-label">NIGHT PHASE</span>
+            
+            <div class="card">
+                <div id="narrator-text" class="big-text">
+                    Ready to start the night?
+                </div>
+                <div class="progress-container">
+                    <div id="timer-bar" class="progress-bar"></div>
+                </div>
+            </div>
+
+            <div style="flex:1"></div>
+
+            <button id="btn-action" class="btn" onclick="runNightSequence()">Start Full Night</button>
+            <button class="btn btn-secondary" onclick="location.reload()">End Game</button>
         </div>
 
     </div>
 
     <script>
-        // --- CONFIG ---
-        const SPEECH_RATE = 0.9;
-        const SPEECH_PITCH = 0.8; // Deep voice
-        const PHASE_WAIT_TIME = 8000; // Time (ms) given to Mafia/Police to act before "Go to sleep"
-        
-        // --- ASSETS ---
-        const IMGS = {
-            ACE: "https://deckofcardsapi.com/static/img/AS.png",
-            KING: "https://deckofcardsapi.com/static/img/KH.png",
-            QUEEN: "https://deckofcardsapi.com/static/img/QH.png",
-            JACK: "https://deckofcardsapi.com/static/img/JC.png",
-            JOKER: "https://deckofcardsapi.com/static/img/0D.png", 
-            CIVILIAN: "https://deckofcardsapi.com/static/img/2C.png" // Generic civilian
+        // --- DATA & CONFIG ---
+        const IMAGES = {
+            Mafia: "https://deckofcardsapi.com/static/img/AS.png",
+            Police: "https://deckofcardsapi.com/static/img/KH.png",
+            Doctor: "https://deckofcardsapi.com/static/img/QH.png",
+            Mayor: "https://deckofcardsapi.com/static/img/JD.png",
+            Civilian: "https://deckofcardsapi.com/static/img/2C.png"
         };
-
-        // --- STATE ---
-        let players = JSON.parse(localStorage.getItem('mafia_players')) || [];
+        
+        let players = JSON.parse(localStorage.getItem('mafia_app_players')) || [];
         let deck = [];
-        let gameQueue = [];
-        let currentStep = 0;
-        let isSpeaking = false;
+        let revealIndex = 0;
         let synth = window.speechSynthesis;
+        let activeRoles = [];
 
-        // --- INITIALIZATION ---
+        // --- SETUP FUNCTIONS ---
         function renderPlayers() {
-            const list = document.getElementById('player-list');
-            list.innerHTML = players.map((p, i) => 
+            const container = document.getElementById('player-list');
+            container.innerHTML = players.map((p, i) => 
                 `<div class="tag">${p} <span onclick="removePlayer(${i})">×</span></div>`
             ).join('');
-            localStorage.setItem('mafia_players', JSON.stringify(players));
+            localStorage.setItem('mafia_app_players', JSON.stringify(players));
         }
-        renderPlayers();
-
+        
         function addPlayer() {
-            const input = document.getElementById('player-input');
+            const input = document.getElementById('player-name');
             const name = input.value.trim();
             if (name) {
                 players.push(name);
@@ -277,284 +275,170 @@
                 renderPlayers();
             }
         }
-
-        function removePlayer(i) {
-            players.splice(i, 1);
+        
+        function removePlayer(index) {
+            players.splice(index, 1);
             renderPlayers();
         }
 
-        function resetData() {
-            if(confirm("Clear all names?")) {
+        function resetPlayers() {
+            if(confirm("Delete all player names?")) {
                 players = [];
                 renderPlayers();
             }
         }
 
-        // --- GAME SETUP & DEALING ---
-        function startGameSetup() {
-            if (players.length < 3) return alert("Need 3+ players.");
+        // --- GAME LOGIC: DEALING ---
+        function startGame() {
+            if (players.length < 3) return alert("You need at least 3 players.");
 
-            // 1. Roles
-            const roles = {
-                police: document.getElementById('role-police').checked,
-                doctor: document.getElementById('role-doctor').checked,
-                mayor: document.getElementById('role-mayor').checked,
-                drunk: document.getElementById('role-drunk').checked
-            };
-
-            // 2. Build Deck
-            let cards = [];
-            const mafiaCount = Math.max(1, Math.floor(players.length / 4));
+            // 1. Determine Deck Composition
+            const hasPolice = document.getElementById('role-police').checked;
+            const hasDoctor = document.getElementById('role-doctor').checked;
+            const hasMayor = document.getElementById('role-mayor').checked;
             
-            for(let i=0; i<mafiaCount; i++) cards.push({ role: "Mafia", img: IMGS.ACE, desc: "Wake up at night. Eliminate one player." });
-            if(roles.police) cards.push({ role: "Police", img: IMGS.KING, desc: "Wake up at night. Check if one player is Mafia." });
-            if(roles.doctor) cards.push({ role: "Doctor", img: IMGS.QUEEN, desc: "Wake up at night. Save one player." });
-            if(roles.mayor) cards.push({ role: "Mayor", img: IMGS.JACK, desc: "Your vote counts as x2 during the day." });
-            if(roles.drunk) cards.push({ role: "Drunkard", img: IMGS.JOKER, desc: "You win if you get voted out." });
+            activeRoles = ['Mafia']; // Always have mafia
+            if(hasPolice) activeRoles.push('Police');
+            if(hasDoctor) activeRoles.push('Doctor');
 
+            let cards = [];
+            // Add Mafia (approx 1 per 4 players)
+            const mafiaCount = Math.max(1, Math.floor(players.length / 4));
+            for(let i=0; i<mafiaCount; i++) cards.push({ role: 'Mafia', img: IMAGES.Mafia, desc: 'Wake up at night. Eliminate a target.' });
+            
+            if (hasPolice) cards.push({ role: 'Police', img: IMAGES.Police, desc: 'Wake up. Check if a player is Mafia.' });
+            if (hasDoctor) cards.push({ role: 'Doctor', img: IMAGES.Doctor, desc: 'Wake up. Save one person from death.' });
+            if (hasMayor) cards.push({ role: 'Mayor', img: IMAGES.Mayor, desc: 'Your vote counts as 2 during the day.' });
+
+            // Fill with Civilians
             while(cards.length < players.length) {
-                cards.push({ role: "Civilian", img: IMGS.CIVILIAN, desc: "Sleep at night. Vote during the day." });
+                cards.push({ role: 'Civilian', img: IMAGES.Civilian, desc: 'Sleep at night. Vote to find the Mafia.' });
             }
 
-            // 3. Shuffle
+            // Shuffle
             cards.sort(() => Math.random() - 0.5);
-            
-            // 4. Assign
-            deck = players.map((p, i) => ({ name: p, card: cards[i] }));
 
-            // 5. Start Reveal
-            switchPanel('screen-reveal');
-            setupReveal(0);
+            // Assign
+            deck = players.map((name, i) => ({ name, card: cards[i] }));
+            
+            // Move to Reveal
+            navigate('screen-reveal');
+            revealIndex = 0;
+            updateRevealUI();
         }
 
-        // --- REVEAL LOGIC ---
-        let revealIdx = 0;
-        function setupReveal(idx) {
-            revealIdx = idx;
-            if (idx >= deck.length) {
-                // Done
-                initGameLoop();
+        // --- REVEAL UI ---
+        function updateRevealUI() {
+            if (revealIndex >= deck.length) {
+                navigate('screen-game');
                 return;
             }
-            const p = deck[idx];
-            document.getElementById('pass-instruction').innerText = `Pass device to ${p.name}`;
-            document.getElementById('secret-card-area').classList.add('hidden');
-            document.getElementById('btn-reveal').innerText = "Reveal My Role";
-            document.getElementById('btn-reveal').onclick = () => {
-                // Show Card
-                document.getElementById('secret-card-area').classList.remove('hidden');
-                document.getElementById('card-img').src = p.card.img;
-                document.getElementById('card-role').innerText = p.card.role;
-                document.getElementById('card-desc').innerText = p.card.desc;
-                
-                // Change Button
-                const btn = document.getElementById('btn-reveal');
-                btn.innerText = "Hide & Pass";
-                btn.onclick = () => setupReveal(idx + 1);
-            };
+            const p = deck[revealIndex];
+            document.getElementById('pass-instruction').innerText = `Pass Phone to: ${p.name}`;
+            document.getElementById('secret-area').style.display = 'none';
+            document.getElementById('btn-reveal').innerText = "Reveal Identity";
+            document.getElementById('btn-reveal').onclick = handleReveal;
         }
 
-        // --- CORE GAME LOOP (REFINED) ---
-        function initGameLoop() {
-            switchPanel('screen-game');
-            buildGameQueue();
-            updateGameUI();
+        function handleReveal() {
+            const secret = document.getElementById('secret-area');
+            const btn = document.getElementById('btn-reveal');
+            
+            if (secret.style.display === 'none') {
+                // Reveal
+                const card = deck[revealIndex].card;
+                document.getElementById('card-img').src = card.img;
+                document.getElementById('card-role').innerText = card.role;
+                document.getElementById('card-desc').innerText = card.desc;
+                secret.style.display = 'block';
+                btn.innerText = "Hide & Next";
+            } else {
+                // Next
+                revealIndex++;
+                updateRevealUI();
+            }
         }
 
-        function buildGameQueue() {
-            // Check active roles in deck to decide prompts
-            const hasRole = (r) => deck.some(d => d.card.role === r);
-
-            gameQueue = [];
-
-            // NIGHT START
-            gameQueue.push({
-                type: 'auto',
-                text: "It is now Night. Everyone, go to sleep.",
-                action: null
-            });
-
-            // MAFIA (Always present)
-            gameQueue.push({
-                type: 'timed_phase',
-                role: 'Mafia',
-                startText: "Mafia, wake up. Choose your target.",
-                endText: "Mafia, go back to sleep.",
-                duration: PHASE_WAIT_TIME
-            });
-
-            // DOCTOR
-            if (hasRole('Doctor')) {
-                gameQueue.push({
-                    type: 'timed_phase',
-                    role: 'Doctor',
-                    startText: "Doctor, wake up. Who are you saving?",
-                    endText: "Doctor, go back to sleep.",
-                    duration: PHASE_WAIT_TIME
-                });
-            }
-
-            // POLICE
-            if (hasRole('Police')) {
-                gameQueue.push({
-                    type: 'timed_phase',
-                    role: 'Police',
-                    startText: "Police, wake up. Investigate someone.",
-                    endText: "Police, go back to sleep.",
-                    duration: PHASE_WAIT_TIME
-                });
-            }
-
-            // MORNING
-            gameQueue.push({
-                type: 'manual',
-                text: "Everyone wake up! It is morning.",
-                btnText: "Start Discussion (5m)"
-            });
-
-            // DAY CYCLE
-            gameQueue.push({
-                type: 'timer',
-                text: "Discuss: Who is the Mafia?",
-                duration: 300 // 5 mins
-            });
-
-            gameQueue.push({
-                type: 'manual',
-                text: "Time's up. Accused, defend yourself.",
-                btnText: "Start Vote"
-            });
-
-            gameQueue.push({
-                type: 'manual',
-                text: "3... 2... 1... VOTE!",
-                btnText: "Next Night"
-            });
-        }
-
-        function updateGameUI() {
-            if (currentStep >= gameQueue.length) {
-                currentStep = 0; // Loop back to night
-            }
-
-            const step = gameQueue[currentStep];
-            const txt = document.getElementById('narrator-text');
+        // --- THE AUTOMATED NIGHT SEQUENCE ---
+        async function runNightSequence() {
             const btn = document.getElementById('btn-action');
-            const phaseLabel = document.getElementById('game-phase-label');
+            btn.disabled = true;
+            btn.innerText = "Night in Progress...";
+            
+            document.getElementById('game-phase').innerText = "NIGHT PHASE";
 
-            // Reset UI
-            document.getElementById('progress-bar').style.width = '0%';
+            // 1. Sleep
+            await narratorAction("It is now night. Everyone, close your eyes.", 2500, false);
+
+            // 2. Mafia (Always)
+            await narratorAction("Mafia, wake up. Choose your victim.", 8000, true); 
+            await narratorAction("Mafia, go back to sleep.", 2000, false);
+
+            // 3. Doctor
+            if (activeRoles.includes('Doctor')) {
+                await narratorAction("Doctor, wake up. Who are you saving?", 6000, true);
+                await narratorAction("Doctor, sleep.", 2000, false);
+            }
+
+            // 4. Police
+            if (activeRoles.includes('Police')) {
+                await narratorAction("Police, wake up. Investigate someone.", 6000, true);
+                await narratorAction("Police, sleep.", 2000, false);
+            }
+
+            // 5. Wake Up / Day Phase
+            document.getElementById('game-phase').innerText = "DAY PHASE";
+            await narratorAction("Everyone wake up! It is morning.", 1000, false);
+            
+            // UI Reset for Day
+            document.getElementById('narrator-text').innerText = "Discuss: Who is the Mafia?";
             btn.disabled = false;
-
-            // Logic based on step type
-            if (step.type === 'timed_phase') {
-                phaseLabel.innerText = "NIGHT PHASE";
-                txt.innerText = `${step.role} Phase`;
-                btn.innerText = `Run ${step.role} Turn`;
-                btn.onclick = () => runTimedPhase(step);
-            } 
-            else if (step.type === 'auto') {
-                phaseLabel.innerText = "NIGHT START";
-                txt.innerText = step.text;
-                btn.innerText = "Announce & Continue";
-                btn.onclick = () => {
-                    speak(step.text, () => {
-                        currentStep++;
-                        updateGameUI();
-                    });
-                };
-            }
-            else if (step.type === 'manual') {
-                phaseLabel.innerText = "DAY PHASE";
-                txt.innerText = step.text;
-                btn.innerText = step.btnText || "Next";
-                btn.onclick = () => {
-                    speak(step.text, () => {
-                        // For vote/end logic, we just move next after speaking
-                        currentStep++;
-                        updateGameUI();
-                    });
-                };
-            }
-            else if (step.type === 'timer') {
-                phaseLabel.innerText = "DISCUSSION";
-                txt.innerText = "Discussion Timer";
-                btn.innerText = "Start 5 Min Timer";
-                btn.onclick = () => {
-                    btn.disabled = true;
-                    runVisualTimer(step.duration, () => {
-                        speak("Time is up.", () => {
-                            currentStep++;
-                            updateGameUI();
-                        });
-                    });
-                }
-            }
+            btn.innerText = "Start Next Night Cycle";
+            
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]); // Buzz buzz
         }
 
-        // --- LOGIC FOR "LESS CLICKS" (Timed Phase) ---
-        function runTimedPhase(step) {
-            const btn = document.getElementById('btn-action');
-            const txt = document.getElementById('narrator-text');
-            
-            btn.disabled = true; // Prevent double clicks
-            btn.innerText = "Role Active...";
-
-            // 1. Show text & Speak Start
-            txt.innerText = step.startText;
-            speak(step.startText, () => {
+        // --- HELPER: NARRATOR & TIMING ---
+        function narratorAction(text, durationMs, showBar) {
+            return new Promise(resolve => {
+                // 1. Text Update
+                document.getElementById('narrator-text').innerText = text;
                 
-                // 2. Start Visual Countdown (Silence)
-                runVisualTimer(step.duration / 1000, () => {
-                    
-                    // 3. Show text & Speak End
-                    txt.innerText = step.endText;
-                    speak(step.endText, () => {
-                        
-                        // 4. Auto Advance
-                        currentStep++;
-                        updateGameUI();
-                    });
-                });
+                // 2. Speech
+                speak(text);
+
+                // 3. Visual Timer (if needed)
+                const bar = document.getElementById('timer-bar');
+                bar.style.transition = 'none';
+                bar.style.width = '0%';
+                
+                if (showBar) {
+                    // Force reflow
+                    void bar.offsetWidth;
+                    bar.style.transition = `width ${durationMs}s linear`;
+                    bar.style.width = '100%';
+                }
+
+                // 4. Wait
+                setTimeout(resolve, durationMs);
             });
         }
 
-        // --- UTILS ---
-        function speak(text, callback) {
-            // Cancel any current speech
-            synth.cancel();
-            
+        function speak(text) {
+            synth.cancel(); // Clear queue
             const utter = new SpeechSynthesisUtterance(text);
-            utter.pitch = SPEECH_PITCH;
-            utter.rate = SPEECH_RATE;
-            
-            utter.onend = () => {
-                if(callback) callback();
-            };
-            
+            utter.rate = 0.9;
+            utter.pitch = 0.8; // Deeper voice
             synth.speak(utter);
         }
 
-        function runVisualTimer(seconds, onComplete) {
-            const bar = document.getElementById('progress-bar');
-            bar.style.transition = `width ${seconds}s linear`;
-            
-            // Force reflow
-            void bar.offsetWidth; 
-            
-            bar.style.width = '100%';
-
-            setTimeout(() => {
-                bar.style.transition = 'none';
-                bar.style.width = '0%';
-                if(onComplete) onComplete();
-            }, seconds * 1000);
+        function navigate(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
         }
 
-        function switchPanel(id) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        // Init
+        renderPlayers();
 
     </script>
 </body>
