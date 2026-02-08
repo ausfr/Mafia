@@ -32,12 +32,15 @@
         /* --- HEADER --- */
         .app-header {
             padding: 15px;
-            text-align: center;
             background: rgba(30, 30, 30, 0.95);
             border-bottom: 1px solid #333;
             z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .app-header h1 { margin: 0; font-size: 1.1rem; letter-spacing: 3px; text-transform: uppercase; color: var(--primary); }
+        .app-header h1 { margin: 0; font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; color: var(--primary); }
+        .settings-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0 10px; }
 
         /* --- SCREENS --- */
         .screen-container { flex: 1; position: relative; overflow: hidden; }
@@ -52,7 +55,7 @@
         }
         .screen.active { opacity: 1; pointer-events: all; transform: translateX(0); }
 
-        /* --- UI CARDS --- */
+        /* --- UI COMPONENTS --- */
         .card {
             background: var(--surface);
             border-radius: 16px;
@@ -64,7 +67,7 @@
 
         h2 { margin: 0 0 15px 0; font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- INPUTS & TAGS --- */
+        /* Inputs */
         .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
         input[type="text"] {
             flex: 1; padding: 14px;
@@ -72,6 +75,8 @@
             background: #252525; color: white;
             font-size: 16px; outline: none;
         }
+        
+        /* Tags */
         .tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .tag {
             background: #333; padding: 8px 14px;
@@ -81,15 +86,21 @@
         }
         .tag span { color: var(--primary); font-weight: 900; padding: 4px; cursor: pointer; }
 
-        /* --- TOGGLES --- */
-        .toggle-row {
+        /* Toggles & Sliders */
+        .setting-row {
             display: flex; justify-content: space-between; align-items: center;
             padding: 14px 0; border-bottom: 1px solid #333;
         }
-        .toggle-row:last-child { border-bottom: none; }
+        .setting-row:last-child { border-bottom: none; }
+        
         input[type="checkbox"] { transform: scale(1.6); accent-color: var(--primary); }
+        
+        input[type="range"] {
+            width: 120px; accent-color: var(--primary);
+        }
+        .setting-value { font-family: monospace; color: var(--primary); font-weight: bold; }
 
-        /* --- GAME IMAGES --- */
+        /* Game Images */
         .role-card-img {
             width: 180px; border-radius: 10px;
             display: block; margin: 10px auto 20px auto;
@@ -97,7 +108,7 @@
             box-shadow: 0 0 25px rgba(0,0,0,0.6);
         }
 
-        /* --- PROGRESS BAR --- */
+        /* Progress Bar */
         .progress-container {
             height: 10px; background: #333;
             border-radius: 5px; margin-top: 20px; overflow: hidden;
@@ -105,10 +116,9 @@
         .progress-bar {
             height: 100%; width: 0%;
             background: var(--primary);
-            /* Transition is set via JS now to fix timing bugs */
         }
 
-        /* --- BUTTONS --- */
+        /* Buttons */
         .btn {
             background: var(--primary); color: white;
             border: none; padding: 18px;
@@ -122,7 +132,7 @@
         .btn-secondary { background: #333; box-shadow: 0 4px 0 #111; margin-top: 15px; }
         .btn-small { width: auto; padding: 0 20px; margin: 0; }
 
-        /* --- TEXT --- */
+        /* Text */
         .big-text {
             font-size: 1.6rem; text-align: center;
             margin: 20px 0; line-height: 1.4;
@@ -138,6 +148,7 @@
 
     <div class="app-header">
         <h1>Mafia Master</h1>
+        <button class="settings-btn" onclick="openSettings()">⚙️</button>
     </div>
 
     <div class="screen-container">
@@ -154,67 +165,101 @@
 
             <div class="card">
                 <h2>Select Roles</h2>
-                <div class="toggle-row">
+                <div class="setting-row">
                     <span>Police (King)</span>
                     <input type="checkbox" id="role-police" checked>
                 </div>
-                <div class="toggle-row">
+                <div class="setting-row">
                     <span>Doctor (Queen)</span>
                     <input type="checkbox" id="role-doctor" checked>
                 </div>
-                <div class="toggle-row">
+                <div class="setting-row">
                     <span>Mayor (x2 Vote)</span>
                     <input type="checkbox" id="role-mayor">
                 </div>
-                <div class="toggle-row">
+                <div class="setting-row">
                     <span>Drunken Idiot</span>
                     <input type="checkbox" id="role-drunk">
                 </div>
             </div>
-
-            <div style="flex:1"></div>
             
-            <button id="btn-start" class="btn" onclick="startGame()">Deal Cards (0 Players)</button>
+            <div style="flex:1"></div>
+            <button id="btn-start" class="btn" onclick="startGame()">Deal Cards (0)</button>
             <button class="btn btn-secondary" onclick="resetPlayers()">Clear Names</button>
+        </div>
+
+        <div id="screen-settings" class="screen">
+            <h2 style="text-align: center; color: var(--primary);">Game Settings</h2>
+            
+            <div class="card">
+                <h2>Timers (Seconds)</h2>
+                
+                <div class="setting-row">
+                    <div>
+                        <div style="font-weight: bold;">Start Delay</div>
+                        <div style="font-size: 0.8em; color: #888;">"Close your eyes..."</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <input type="range" min="3" max="15" value="8" id="set-start-delay" oninput="updateSettingsUI()">
+                        <div id="val-start-delay" class="setting-value">8s</div>
+                    </div>
+                </div>
+
+                <div class="setting-row">
+                    <div>
+                        <div style="font-weight: bold;">Decision Time</div>
+                        <div style="font-size: 0.8em; color: #888;">Mafia/Doc Action</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <input type="range" min="5" max="60" value="15" id="set-action-time" oninput="updateSettingsUI()">
+                        <div id="val-action-time" class="setting-value">15s</div>
+                    </div>
+                </div>
+
+                <div class="setting-row">
+                    <div>
+                        <div style="font-weight: bold;">Speech Speed</div>
+                        <div style="font-size: 0.8em; color: #888;">Narrator Voice</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <input type="range" min="0.5" max="1.5" step="0.1" value="0.9" id="set-speech-rate" oninput="updateSettingsUI()">
+                        <div id="val-speech-rate" class="setting-value">0.9x</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn" onclick="closeSettings()">Save & Close</button>
         </div>
 
         <div id="screen-reveal" class="screen">
             <div class="card" style="text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
                 <h3 id="pass-instruction" style="color: var(--primary); margin-bottom: 20px; font-size: 1.3rem;">Pass Phone to...</h3>
-                
                 <div id="secret-area" style="display: none; animation: fadeIn 0.4s;">
                     <img id="card-img" class="role-card-img" src="">
                     <div id="card-role" style="font-size: 2rem; font-weight: 800; margin-bottom: 5px; color: white;">ROLE</div>
                     <div id="card-desc" style="color: var(--text-dim); font-size: 1rem; line-height: 1.4;">Desc</div>
                 </div>
-
                 <div style="flex:1"></div>
-                
                 <button id="btn-reveal" class="btn" onclick="handleReveal()">Reveal Identity</button>
             </div>
         </div>
 
         <div id="screen-game" class="screen">
             <span id="game-phase" class="phase-label">NIGHT PHASE</span>
-            
             <div class="card">
-                <div id="narrator-text" class="big-text">
-                    Ready to start the night?
-                </div>
+                <div id="narrator-text" class="big-text">Ready?</div>
                 <div class="progress-container">
                     <div id="timer-bar" class="progress-bar"></div>
                 </div>
             </div>
-
             <div style="flex:1"></div>
-
             <button id="btn-action" class="btn" onclick="runNightSequence()">Start Full Night</button>
             <button class="btn btn-secondary" onclick="location.reload()">New Game</button>
         </div>
     </div>
 
     <script>
-        // --- ASSETS & CONFIG ---
+        // --- DATA & DEFAULTS ---
         const IMAGES = {
             Mafia: "https://deckofcardsapi.com/static/img/AS.png",
             Police: "https://deckofcardsapi.com/static/img/KH.png",
@@ -224,88 +269,87 @@
             Civilian: "https://deckofcardsapi.com/static/img/2C.png"
         };
         
-        // TIMING SETTINGS (in Milliseconds)
-        const TIME_ACTION = 15000;   // 15 seconds to choose victim/save
-        const TIME_TRANSITION = 5000; // 5 seconds of silence between roles
-
         let players = JSON.parse(localStorage.getItem('mafia_app_players')) || [];
         let deck = [];
         let revealIndex = 0;
         let synth = window.speechSynthesis;
-        let activeRoles = []; 
+        let activeRoles = [];
 
-        // --- SETUP & VALIDATION ---
+        // Game Settings
+        let gameSettings = {
+            startDelay: 8000,   // Initial sleep delay
+            actionTime: 15000,  // Decision time
+            speechRate: 0.9,
+            transitionTime: 5000 // Between roles
+        };
+
+        // --- SETUP ---
         function renderPlayers() {
             const container = document.getElementById('player-list');
             const btn = document.getElementById('btn-start');
-            container.innerHTML = players.map((p, i) => 
-                `<div class="tag">${p} <span onclick="removePlayer(${i})">×</span></div>`
-            ).join('');
-            btn.innerText = `Deal Cards (${players.length} Players)`;
+            container.innerHTML = players.map((p, i) => `<div class="tag">${p} <span onclick="removePlayer(${i})">×</span></div>`).join('');
+            btn.innerText = `Deal Cards (${players.length})`;
             localStorage.setItem('mafia_app_players', JSON.stringify(players));
         }
         
         function addPlayer() {
-            const input = document.getElementById('player-name');
-            const name = input.value.trim();
-            if (name) { players.push(name); input.value = ''; renderPlayers(); }
+            const val = document.getElementById('player-name').value.trim();
+            if (val) { players.push(val); document.getElementById('player-name').value = ''; renderPlayers(); }
         }
-        
-        function removePlayer(i) {
-            players.splice(i, 1);
-            renderPlayers();
-        }
+        function removePlayer(i) { players.splice(i, 1); renderPlayers(); }
+        function resetPlayers() { if(confirm("Clear all names?")) { players = []; renderPlayers(); } }
 
-        function resetPlayers() {
-            if(confirm("Delete all names?")) { players = []; renderPlayers(); }
+        // --- SETTINGS LOGIC ---
+        function openSettings() {
+            document.getElementById('screen-settings').classList.add('active');
+        }
+        function closeSettings() {
+            document.getElementById('screen-settings').classList.remove('active');
+        }
+        function updateSettingsUI() {
+            const sDelay = document.getElementById('set-start-delay').value;
+            const aTime = document.getElementById('set-action-time').value;
+            const rate = document.getElementById('set-speech-rate').value;
+
+            document.getElementById('val-start-delay').innerText = sDelay + "s";
+            document.getElementById('val-action-time').innerText = aTime + "s";
+            document.getElementById('val-speech-rate').innerText = rate + "x";
+
+            // Save to Global Config (convert to MS)
+            gameSettings.startDelay = sDelay * 1000;
+            gameSettings.actionTime = aTime * 1000;
+            gameSettings.speechRate = parseFloat(rate);
         }
 
         // --- GAME START ---
         function startGame() {
-            if (players.length < 3) return alert("You need at least 3 players.");
+            if (players.length < 3) return alert("Need 3+ players.");
 
-            const settings = {
+            // Roles
+            const roles = {
                 Police: document.getElementById('role-police').checked,
                 Doctor: document.getElementById('role-doctor').checked,
                 Mayor: document.getElementById('role-mayor').checked,
                 Drunk: document.getElementById('role-drunk').checked
             };
 
-            // Calculate Roles
             const mafiaCount = Math.max(1, Math.floor(players.length / 4));
-            let specialCount = 0;
-            if (settings.Police) specialCount++;
-            if (settings.Doctor) specialCount++;
-            if (settings.Mayor) specialCount++;
-            if (settings.Drunk) specialCount++;
+            let needed = mafiaCount + (roles.Police?1:0) + (roles.Doctor?1:0) + (roles.Mayor?1:0) + (roles.Drunk?1:0);
 
-            if ((mafiaCount + specialCount) > players.length) {
-                alert(`Not enough players!\nRequired: ${mafiaCount + specialCount}\nYou have: ${players.length}`);
-                return;
-            }
+            if (needed > players.length) return alert(`Not enough players! Required: ${needed}`);
 
             // Build Deck
-            activeRoles = ['Mafia']; // Track night sequence
+            activeRoles = ['Mafia'];
             let cards = [];
+            for(let i=0; i<mafiaCount; i++) cards.push({ role: 'Mafia', img: IMAGES.Mafia, desc: 'Eliminate one target.' });
+            
+            if (roles.Police) { cards.push({ role: 'Police', img: IMAGES.Police, desc: 'Check if player is Mafia.' }); activeRoles.push('Police'); }
+            if (roles.Doctor) { cards.push({ role: 'Doctor', img: IMAGES.Doctor, desc: 'Save someone from death.' }); activeRoles.push('Doctor'); }
+            if (roles.Mayor) cards.push({ role: 'Mayor', img: IMAGES.Mayor, desc: 'Vote counts x2.' });
+            if (roles.Drunk) cards.push({ role: 'Drunken Idiot', img: IMAGES.Drunk, desc: 'Try to get voted out.' });
 
-            for(let i=0; i<mafiaCount; i++) cards.push({ role: 'Mafia', img: IMAGES.Mafia, desc: 'Wake up at night. Eliminate a target.' });
+            while(cards.length < players.length) cards.push({ role: 'Civilian', img: IMAGES.Civilian, desc: 'Find the Mafia.' });
 
-            if (settings.Police) {
-                cards.push({ role: 'Police', img: IMAGES.Police, desc: 'Wake up. Check if a player is Mafia.' });
-                activeRoles.push('Police');
-            }
-            if (settings.Doctor) {
-                cards.push({ role: 'Doctor', img: IMAGES.Doctor, desc: 'Wake up. Save one person from death.' });
-                activeRoles.push('Doctor');
-            }
-            if (settings.Mayor) cards.push({ role: 'Mayor', img: IMAGES.Mayor, desc: 'Your vote counts as 2x during the day.' });
-            if (settings.Drunk) cards.push({ role: 'Drunken Idiot', img: IMAGES.Drunk, desc: 'You WANT to get voted out. Act suspicious!' });
-
-            while(cards.length < players.length) {
-                cards.push({ role: 'Civilian', img: IMAGES.Civilian, desc: 'Sleep at night. Vote to find the Mafia.' });
-            }
-
-            // Shuffle
             cards.sort(() => Math.random() - 0.5);
             deck = players.map((name, i) => ({ name, card: cards[i] }));
             
@@ -314,7 +358,7 @@
             updateRevealUI();
         }
 
-        // --- REVEAL PHASE ---
+        // --- REVEAL ---
         function updateRevealUI() {
             if (revealIndex >= deck.length) { navigate('screen-game'); return; }
             const p = deck[revealIndex];
@@ -326,45 +370,43 @@
 
         function handleReveal() {
             const secret = document.getElementById('secret-area');
-            const btn = document.getElementById('btn-reveal');
-            
             if (secret.style.display === 'none') {
-                const card = deck[revealIndex].card;
-                document.getElementById('card-img').src = card.img;
-                document.getElementById('card-role').innerText = card.role;
-                document.getElementById('card-desc').innerText = card.desc;
+                const c = deck[revealIndex].card;
+                document.getElementById('card-img').src = c.img;
+                document.getElementById('card-role').innerText = c.role;
+                document.getElementById('card-desc').innerText = c.desc;
                 secret.style.display = 'block';
-                btn.innerText = "Hide & Next Player";
+                document.getElementById('btn-reveal').innerText = "Hide & Next";
             } else {
                 revealIndex++;
                 updateRevealUI();
             }
         }
 
-        // --- ONE-CLICK NIGHT AUTOMATION ---
+        // --- NIGHT SEQUENCE ---
         async function runNightSequence() {
             const btn = document.getElementById('btn-action');
             btn.disabled = true;
             btn.innerText = "Night in Progress...";
             document.getElementById('game-phase').innerText = "NIGHT PHASE";
 
-            // 1. Sleep
-            await narratorAction("It is now night. Everyone, close your eyes.", 10000, false);
+            // 1. Sleep Phase (Uses Start Delay Setting)
+            await narratorAction("It is now night. Everyone, close your eyes.", gameSettings.startDelay, false);
 
-            // 2. Mafia
-            await narratorAction("Mafia, wake up. Choose your victim.", TIME_ACTION, true); 
-            await narratorAction("Mafia, go back to sleep.", TIME_TRANSITION, false);
+            // 2. Mafia Phase (Uses Action Time Setting)
+            await narratorAction("Mafia, wake up. Choose your victim.", gameSettings.actionTime, true); 
+            await narratorAction("Mafia, go back to sleep.", gameSettings.transitionTime, false);
 
-            // 3. Doctor
+            // 3. Doctor Phase
             if (activeRoles.includes('Doctor')) {
-                await narratorAction("Doctor, wake up. Who are you saving?", TIME_ACTION, true);
-                await narratorAction("Doctor, sleep.", TIME_TRANSITION, false);
+                await narratorAction("Doctor, wake up. Who are you saving?", gameSettings.actionTime, true);
+                await narratorAction("Doctor, sleep.", gameSettings.transitionTime, false);
             }
 
-            // 4. Police
+            // 4. Police Phase
             if (activeRoles.includes('Police')) {
-                await narratorAction("Police, wake up. Investigate someone.", TIME_ACTION, true);
-                await narratorAction("Police, sleep.", TIME_TRANSITION, false);
+                await narratorAction("Police, wake up. Investigate someone.", gameSettings.actionTime, true);
+                await narratorAction("Police, sleep.", gameSettings.transitionTime, false);
             }
 
             // 5. Morning
@@ -378,50 +420,39 @@
             if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
         }
 
-        // --- CORE NARRATOR LOGIC (FIXED TIMER) ---
-        function narratorAction(text, durationMs, showBar) {
+        // --- NARRATOR UTILS ---
+        function narratorAction(text, duration, showBar) {
             return new Promise(resolve => {
                 document.getElementById('narrator-text').innerText = text;
                 speak(text);
 
                 const bar = document.getElementById('timer-bar');
-                
-                // Reset bar instantly
                 bar.style.transition = 'none';
                 bar.style.width = '0%';
-                bar.style.backgroundColor = 'var(--primary)'; // Reset color to red
+                bar.style.backgroundColor = 'var(--primary)';
                 
                 if (showBar) {
-                    // Trigger Reflow so CSS notices the reset
-                    void bar.offsetWidth; 
-
-                    // Start Animation
-                    // BUG FIX: Convert ms to seconds for CSS
-                    const durationSec = durationMs / 1000;
-                    bar.style.transition = `width ${durationSec}s linear`;
+                    void bar.offsetWidth; // Reflow
+                    bar.style.transition = `width ${duration/1000}s linear`;
                     bar.style.width = '100%';
-
-                    // Change color near end (optional visual flair)
-                    setTimeout(() => {
-                        bar.style.backgroundColor = '#66bb6a'; // Green when done
-                    }, durationMs - 500);
+                    setTimeout(() => { bar.style.backgroundColor = '#66bb6a'; }, duration - 500);
                 }
 
-                setTimeout(resolve, durationMs);
+                setTimeout(resolve, duration);
             });
         }
 
         function speak(text) {
             synth.cancel();
             const utter = new SpeechSynthesisUtterance(text);
-            utter.rate = 0.9;
-            utter.pitch = 0.8; 
+            utter.rate = gameSettings.speechRate; // Use dynamic setting
+            utter.pitch = 0.8;
             synth.speak(utter);
         }
 
-        function navigate(screenId) {
+        function navigate(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
+            document.getElementById(id).classList.add('active');
         }
 
         renderPlayers();
