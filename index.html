@@ -3,513 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#121212">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Mafia Game Console</title>
+    <title>Mafia: Interactive Narrator</title>
     <style>
-        /* --- CORE THEME --- */
         :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --primary: #d32f2f; /* Red */
-            --secondary: #0288d1; /* Blue */
-            --success: #388e3c; /* Green */
-            --text: #ffffff;
-            --text-dim: #b0b0b0;
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --primary: #d32f2f;
+            --secondary: #1976d2;
+            --text: #e0e0e0;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg); color: var(--text);
+            margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
         /* --- HEADER --- */
-        .header {
-            padding: 15px;
-            background: rgba(30,30,30,0.95);
-            border-bottom: 1px solid #333;
-            text-align: center;
-            z-index: 10;
-        }
-        .header h1 { margin: 0; font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; color: var(--primary); }
+        .header { padding: 15px; background: #000; text-align: center; border-bottom: 1px solid #333; }
+        .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 3px; color: var(--primary); text-transform: uppercase; }
 
         /* --- SCREENS --- */
         .screen {
-            flex: 1;
-            display: none; /* Hidden by default */
-            flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
-            animation: fadeIn 0.3s ease;
+            flex: 1; display: none; flex-direction: column;
+            padding: 20px; overflow-y: auto; animation: fadeIn 0.3s ease;
         }
         .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- UI ELEMENTS --- */
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .p-btn {
+            background: #252525; border: 1px solid #444; color: white;
+            padding: 15px; border-radius: 8px; text-align: center; cursor: pointer;
+        }
+        .p-btn.selected { background: var(--primary); border-color: white; font-weight: bold; }
+        .p-btn.dead { opacity: 0.3; text-decoration: line-through; pointer-events: none; }
 
-        /* --- CARDS & LISTS --- */
-        .card {
-            background: var(--surface);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border: 1px solid #333;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        .player-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .player-btn {
-            background: #2c2c2c;
-            border: 1px solid #444;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 1rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .player-btn.selected {
-            background: var(--primary);
-            border-color: var(--primary);
-            font-weight: bold;
-            box-shadow: 0 0 10px rgba(211, 47, 47, 0.5);
-        }
-        .player-btn.dead {
-            opacity: 0.4;
-            text-decoration: line-through;
-            background: #111;
-            pointer-events: none;
-        }
-
-        /* --- INPUTS --- */
-        .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
-        input[type="text"] {
-            flex: 1; padding: 14px;
-            border-radius: 8px; border: 1px solid #444;
-            background: #252525; color: white;
-            font-size: 16px; outline: none;
-        }
-
-        /* --- BUTTONS --- */
         .btn {
-            background: var(--primary); color: white;
-            border: none; padding: 18px;
-            border-radius: 10px; font-size: 1.1rem; font-weight: 700;
-            width: 100%; margin-top: 10px; cursor: pointer;
-            box-shadow: 0 4px 0 #9a0007;
-            transition: transform 0.1s;
+            background: var(--primary); color: white; border: none; padding: 18px;
+            border-radius: 10px; font-size: 1.1rem; font-weight: bold; width: 100%;
+            cursor: pointer; box-shadow: 0 4px 0 #800; margin-top: 10px;
         }
-        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #9a0007; }
-        .btn-blue { background: var(--secondary); box-shadow: 0 4px 0 #005b9f; }
-        .btn-green { background: var(--success); box-shadow: 0 4px 0 #1b5e20; }
-        .btn-outline { background: transparent; border: 2px solid #444; box-shadow: none; color: #888; }
-        .btn-small { width: auto; padding: 0 20px; margin: 0; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #800; }
+        .btn-sec { background: var(--secondary); box-shadow: 0 4px 0 #0d47a1; }
 
-        /* --- TOGGLES --- */
-        .toggle-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid #333;
-        }
-        input[type="checkbox"] { transform: scale(1.5); accent-color: var(--primary); }
-
-        /* --- TEXT --- */
-        .big-msg { font-size: 1.5rem; text-align: center; margin: 30px 0; line-height: 1.4; color: var(--text); }
-        .role-title { font-size: 2rem; color: var(--primary); font-weight: 900; margin-bottom: 10px; }
-        
-        /* --- MODAL (Police Result) --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 100;
-            display: none;
-            align-items: center; justify-content: center;
-            padding: 20px;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-box {
-            background: #222; padding: 30px;
-            border-radius: 15px; border: 2px solid var(--secondary);
-            text-align: center; width: 100%; max-width: 350px;
+        input[type="text"] {
+            width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #444;
+            background: #222; color: white; font-size: 1rem; margin-bottom: 10px;
         }
 
+        .role-tag { font-size: 2rem; color: var(--primary); font-weight: 900; margin: 10px 0; }
+        .narrator-msg { font-style: italic; color: #888; text-align: center; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Mafia Console</h1>
-    </div>
+    <div class="header"><h1>Mafia Narrator</h1></div>
 
-    <div id="screen-setup" class="screen active">
+    <div id="scr-setup" class="screen active">
         <div class="card">
-            <h2 style="margin-top:0;">Add Players</h2>
-            <div class="input-row">
-                <input type="text" id="p-name" placeholder="Player Name" onkeydown="if(event.key==='Enter') addPlayer()">
-                <button class="btn btn-small" onclick="addPlayer()">+</button>
+            <h2>Players</h2>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="in-name" placeholder="Name" onkeydown="if(event.key==='Enter') addP()">
+                <button class="btn" style="width:auto; margin:0;" onclick="addP()">+</button>
             </div>
-            <div id="p-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+            <div id="p-tags" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
         </div>
-
         <div class="card">
-            <h2 style="margin-top:0;">Roles</h2>
-            <div class="toggle-row"><span>Police 👮</span> <input type="checkbox" id="role-police" checked></div>
-            <div class="toggle-row"><span>Doctor 🚑</span> <input type="checkbox" id="role-doctor" checked></div>
-            <div class="toggle-row"><span>Drunkard 🍺</span> <input type="checkbox" id="role-drunk"></div>
+            <h2>Special Roles</h2>
+            <label style="display:block; margin:10px 0;"><input type="checkbox" id="chk-pol" checked> Police 👮</label>
+            <label style="display:block; margin:10px 0;"><input type="checkbox" id="chk-doc" checked> Doctor 🚑</label>
+            <label style="display:block; margin:10px 0;"><input type="checkbox" id="chk-drk"> Drunkard 🍺</label>
         </div>
-
-        <div style="flex:1"></div>
         <button class="btn" onclick="startGame()">Start Game</button>
-        <button class="btn btn-outline" onclick="resetApp()" style="margin-top:10px;">Reset All</button>
     </div>
 
-    <div id="screen-reveal" class="screen">
-        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
-            <h2 id="rev-instruction" style="color:var(--secondary);">Pass Phone to Player</h2>
-            
-            <div id="rev-card" style="display:none; animation:fadeIn 0.5s;">
-                <div id="rev-role" class="role-title">ROLE</div>
-                <p id="rev-desc" style="color:#aaa; font-size:1.1rem;">Description</p>
-                <div style="font-size:3rem; margin:20px;">🃏</div>
+    <div id="scr-reveal" class="screen">
+        <h2 id="rev-user" style="text-align:center;">Pass to Player</h2>
+        <div class="card" style="text-align:center; min-height:200px; display:flex; flex-direction:column; justify-content:center;">
+            <div id="rev-box" style="display:none;">
+                <div id="rev-role" class="role-tag">ROLE</div>
+                <p id="rev-desc">Description</p>
             </div>
         </div>
-        <button id="btn-reveal" class="btn" onclick="handleReveal()">Reveal Role</button>
+        <button id="btn-rev" class="btn" onclick="doReveal()">Reveal Role</button>
     </div>
 
-    <div id="screen-pass" class="screen">
+    <div id="scr-pass" class="screen">
         <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
-            <div style="font-size:4rem; margin-bottom:20px;">🌙</div>
-            <h2>Night Phase</h2>
-            <p class="big-msg" id="pass-msg">Pass device to Mafia</p>
+            <h2 id="pass-title">NIGHT</h2>
+            <p id="pass-instruction" style="font-size:1.5rem;">Pass device to Mafia</p>
         </div>
-        <button class="btn" onclick="startTurn()">I am ready</button>
+        <button class="btn" onclick="openAction()">I am ready</button>
     </div>
 
-    <div id="screen-action" class="screen">
-        <h2 id="act-title" style="text-align:center; color:var(--primary);">Mafia Turn</h2>
-        <p id="act-instruct" style="text-align:center; color:#888;">Select a target:</p>
-        
-        <div id="action-grid" class="player-grid">
-            </div>
-
-        <div style="flex:1"></div>
-        <button id="btn-confirm-action" class="btn" onclick="confirmAction()">Confirm Selection</button>
+    <div id="scr-action" class="screen">
+        <h2 id="act-role-title" style="text-align:center; color:var(--primary);">MAFIA</h2>
+        <p class="narrator-msg" id="act-voice-text">The Narrator is speaking...</p>
+        <div id="act-grid" class="grid"></div>
+        <button id="btn-confirm" class="btn" onclick="confirmAct()">Confirm Choice</button>
     </div>
 
-    <div id="screen-day" class="screen">
-        <div style="text-align:center;">
-            <div style="font-size:3rem;">☀️</div>
-            <h2 style="color:#fb8c00;">Morning Report</h2>
-            <p id="day-report" class="big-msg" style="border:1px solid #333; padding:15px; border-radius:8px; background:#222;">
-                Loading...
-            </p>
+    <div id="scr-day" class="screen">
+        <h2 style="text-align:center;">MORNING</h2>
+        <div class="card" id="day-report" style="font-size:1.2rem; text-align:center; border-left:5px solid var(--primary);">
+            Reporting...
         </div>
-
-        <div class="card">
-            <h3>Village Status</h3>
-            <div id="village-grid" class="player-grid"></div>
-        </div>
-
-        <button class="btn btn-blue" onclick="startVoting()">Vote Someone Out (Hanging)</button>
-        <button class="btn" onclick="startNightPhase()" style="margin-top:15px;">Start Next Night 🌙</button>
-    </div>
-
-    <div id="police-modal" class="modal-overlay">
-        <div class="modal-box">
-            <h2 style="color:var(--secondary);">Investigation Result</h2>
-            <div id="police-result-text" style="font-size:2rem; font-weight:bold; margin:20px 0; color:white;">???</div>
-            <button class="btn" onclick="closePoliceModal()">OK</button>
-        </div>
-    </div>
-
-    <div id="screen-win" class="screen">
-        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
-            <h1 id="win-title" style="font-size:3rem; color:var(--success);">WINNER</h1>
-            <p id="win-desc" class="big-msg">The Village Wins!</p>
-        </div>
-        <button class="btn" onclick="location.reload()">Play Again</button>
+        <div id="day-grid" class="grid"></div>
+        <button class="btn btn-sec" onclick="voteOut()">Vote Someone Out (Trial)</button>
+        <button class="btn" onclick="startNight()">Start Next Night</button>
     </div>
 
     <script>
         // --- DATA ---
-        let players = JSON.parse(localStorage.getItem('mafia_players')) || [];
-        let deck = []; // { name, role, status: 'alive'|'dead' }
-        let nightState = {
-            mafiaTarget: null,
-            doctorTarget: null,
-            turnQueue: [], // ['Mafia', 'Doctor', 'Police']
-            currentTurnIdx: 0
-        };
+        let players = JSON.parse(localStorage.getItem('mafia_names')) || [];
+        let deck = []; // {name, role, alive:true}
+        let nightLog = { kill: null, save: null };
+        let queue = [];
+        let qIdx = 0;
+        const synth = window.speechSynthesis;
 
         // --- SETUP ---
-        function addPlayer() {
-            const n = document.getElementById('p-name').value.trim();
-            if(n) { players.push(n); document.getElementById('p-name').value = ''; renderSetup(); }
+        function addP() {
+            let n = document.getElementById('in-name').value.trim();
+            if(n) { players.push(n); document.getElementById('in-name').value=''; renderSetup(); }
         }
         function renderSetup() {
-            document.getElementById('p-list').innerHTML = players.map((p,i)=>
-                `<div style="background:#333; padding:5px 10px; border-radius:15px; border:1px solid #444;">${p} <span onclick="players.splice(${i},1);renderSetup()" style="color:red;font-weight:bold;cursor:pointer;">×</span></div>`
-            ).join('');
-            localStorage.setItem('mafia_players', JSON.stringify(players));
+            document.getElementById('p-tags').innerHTML = players.map((p,i)=>`<div class="p-btn" style="padding:5px 10px;">${p} <span onclick="players.splice(${i},1);renderSetup()" style="color:red;">×</span></div>`).join('');
+            localStorage.setItem('mafia_names', JSON.stringify(players));
         }
-        function resetApp() { if(confirm("Reset everything?")) { players=[]; renderSetup(); } }
         renderSetup();
 
-        function startGame() {
-            if(players.length < 3) return alert("Need 3+ players.");
-            
-            // Build Deck
-            const usePolice = document.getElementById('role-police').checked;
-            const useDoctor = document.getElementById('role-doctor').checked;
-            const useDrunk = document.getElementById('role-drunk').checked;
-
-            let roles = [];
-            let mafiaCount = Math.max(1, Math.floor(players.length/4));
-            
-            for(let i=0; i<mafiaCount; i++) roles.push('Mafia');
-            if(usePolice) roles.push('Police');
-            if(useDoctor) roles.push('Doctor');
-            if(useDrunk) roles.push('Drunkard');
-            
-            while(roles.length < players.length) roles.push('Civilian');
-            
-            // Shuffle
-            roles.sort(() => Math.random() - 0.5);
-            
-            // Assign
-            deck = players.map((p, i) => ({
-                name: p,
-                role: roles[i],
-                status: 'alive'
-            }));
-
-            // Reveal Phase
-            revealIdx = 0;
-            updateReveal();
-            showScreen('screen-reveal');
+        function speak(txt, callback) {
+            synth.cancel();
+            let u = new SpeechSynthesisUtterance(txt);
+            u.pitch = 0.8; u.rate = 0.9;
+            u.onend = callback;
+            synth.speak(u);
         }
 
-        // --- REVEAL LOGIC ---
-        let revealIdx = 0;
-        function updateReveal() {
-            if(revealIdx >= deck.length) { startNightPhase(); return; }
-            const p = deck[revealIdx];
-            document.getElementById('rev-instruction').innerText = `Pass to: ${p.name}`;
-            document.getElementById('rev-card').style.display = 'none';
-            document.getElementById('btn-reveal').innerText = "Tap to Reveal";
-            document.getElementById('btn-reveal').onclick = () => {
-                document.getElementById('rev-card').style.display = 'block';
-                document.getElementById('rev-role').innerText = p.role;
-                document.getElementById('rev-role').style.color = p.role === 'Mafia' ? 'var(--primary)' : 'var(--secondary)';
-                
-                // Descriptions
-                let d = "You are an innocent villager.";
-                if(p.role === 'Mafia') d = "Kill the villagers at night.";
-                if(p.role === 'Police') d = "Investigate people at night.";
-                if(p.role === 'Doctor') d = "Save someone from death.";
-                if(p.role === 'Drunkard') d = "Try to get voted out (Hanged) to win.";
-                document.getElementById('rev-desc').innerText = d;
+        // --- GAME ENGINE ---
+        function startGame() {
+            if(players.length < 3) return alert("Need 3+ players");
+            let roles = [];
+            let mCount = Math.max(1, Math.floor(players.length/4));
+            for(let i=0; i<mCount; i++) roles.push('Mafia');
+            if(document.getElementById('chk-pol').checked) roles.push('Police');
+            if(document.getElementById('chk-doc').checked) roles.push('Doctor');
+            if(document.getElementById('chk-drk').checked) roles.push('Drunkard');
+            while(roles.length < players.length) roles.push('Citizen');
+            
+            roles.sort(()=>Math.random()-0.5);
+            deck = players.map((p,i)=>({name:p, role:roles[i], alive:true}));
+            
+            revIdx = 0;
+            showScr('scr-reveal');
+            prepRev();
+        }
 
-                document.getElementById('btn-reveal').innerText = "Hide & Next";
-                document.getElementById('btn-reveal').onclick = () => {
-                    revealIdx++;
-                    updateReveal();
-                };
+        // --- REVEAL ---
+        let revIdx = 0;
+        function prepRev() {
+            if(revIdx >= deck.length) return startNight();
+            document.getElementById('rev-user').innerText = `Pass to: ${deck[revIdx].name}`;
+            document.getElementById('rev-box').style.display = 'none';
+            document.getElementById('btn-rev').innerText = "Tap to Reveal";
+            document.getElementById('btn-rev').onclick = () => {
+                document.getElementById('rev-box').style.display = 'block';
+                document.getElementById('rev-role').innerText = deck[revIdx].role;
+                document.getElementById('rev-desc').innerText = getDesc(deck[revIdx].role);
+                document.getElementById('btn-rev').innerText = "Hide & Next";
+                document.getElementById('btn-rev').onclick = () => { revIdx++; prepRev(); };
             };
         }
+        function getDesc(r) {
+            if(r==='Mafia') return "Kill a citizen every night.";
+            if(r==='Police') return "Investigate a player every night.";
+            if(r==='Doctor') return "Save one player from death every night.";
+            if(r==='Drunkard') return "Act suspicious. If you are voted out, you win!";
+            return "Survive and vote out the Mafia.";
+        }
 
-        // --- NIGHT PHASE ENGINE ---
-        function startNightPhase() {
-            nightState = { mafiaTarget: null, doctorTarget: null, turnQueue: [], currentTurnIdx: 0 };
+        // --- NIGHT ENGINE ---
+        function startNight() {
+            nightLog = { kill: null, save: null };
+            queue = [];
+            qIdx = 0;
+            if(deck.some(p=>p.role==='Mafia' && p.alive)) queue.push('Mafia');
+            if(deck.some(p=>p.role==='Doctor' && p.alive)) queue.push('Doctor');
+            if(deck.some(p=>p.role==='Police' && p.alive)) queue.push('Police');
+
+            speak("It is now night. Everyone, go to sleep.", () => {
+                nextInQueue();
+            });
+        }
+
+        function nextInQueue() {
+            if(qIdx >= queue.length) return resolveNight();
+            let role = queue[qIdx];
+            document.getElementById('pass-instruction').innerText = `Pass device to: ${role}`;
+            showScr('scr-pass');
+            speak(`${role}, wake up.`);
+        }
+
+        function openAction() {
+            let role = queue[qIdx];
+            document.getElementById('act-role-title').innerText = role;
+            let prompt = "";
+            if(role==='Mafia') prompt = "Mafia, choose your victim.";
+            if(role==='Doctor') prompt = "Doctor, who are you protecting?";
+            if(role==='Police') prompt = "Police, who do you want to investigate?";
             
-            // Build Queue based on ALIVE roles
-            if(deck.some(p => p.role === 'Mafia' && p.status === 'alive')) nightState.turnQueue.push('Mafia');
-            if(deck.some(p => p.role === 'Doctor' && p.status === 'alive')) nightState.turnQueue.push('Doctor');
-            if(deck.some(p => p.role === 'Police' && p.status === 'alive')) nightState.turnQueue.push('Police');
-            
-            // Start Queue
-            processTurnQueue();
+            document.getElementById('act-voice-text').innerText = prompt;
+            renderGrid('act-grid', true);
+            showScr('scr-action');
+            speak(prompt);
         }
 
-        function processTurnQueue() {
-            if(nightState.currentTurnIdx >= nightState.turnQueue.length) {
-                resolveNight(); // Everyone went
-                return;
-            }
-
-            const role = nightState.turnQueue[nightState.currentTurnIdx];
-            document.getElementById('pass-msg').innerText = `Pass device to ${role}`;
-            showScreen('screen-pass');
-        }
-
-        function startTurn() {
-            const role = nightState.turnQueue[nightState.currentTurnIdx];
-            renderActionGrid(role);
-            showScreen('screen-action');
-        }
-
-        let selectedTargetIndex = null;
-        function renderActionGrid(role) {
-            document.getElementById('act-title').innerText = `${role} Turn`;
-            const grid = document.getElementById('action-grid');
-            grid.innerHTML = '';
-            selectedTargetIndex = null;
-            document.getElementById('btn-confirm-action').disabled = true;
-
-            // Generate buttons for alive players
+        let selIdx = -1;
+        function renderGrid(id, selectable) {
+            const container = document.getElementById(id);
+            container.innerHTML = '';
+            selIdx = -1;
             deck.forEach((p, i) => {
-                const btn = document.createElement('div');
-                btn.className = `player-btn ${p.status}`;
-                btn.innerText = p.name;
-                
-                if(p.status === 'alive') {
-                    btn.onclick = () => {
-                        // UI Select
-                        document.querySelectorAll('.player-btn').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        selectedTargetIndex = i;
-                        document.getElementById('btn-confirm-action').disabled = false;
-                        document.getElementById('btn-confirm-action').style.opacity = "1";
+                const b = document.createElement('div');
+                b.className = `p-btn ${p.alive ? '' : 'dead'}`;
+                b.innerText = p.name;
+                if(selectable && p.alive) {
+                    b.onclick = () => {
+                        document.querySelectorAll('.p-btn').forEach(x=>x.classList.remove('selected'));
+                        b.classList.add('selected');
+                        selIdx = i;
                     };
                 }
-                grid.appendChild(btn);
+                container.appendChild(b);
             });
-            document.getElementById('btn-confirm-action').style.opacity = "0.5";
         }
 
-        function confirmAction() {
-            const role = nightState.turnQueue[nightState.currentTurnIdx];
-            const target = deck[selectedTargetIndex];
+        function confirmAct() {
+            if(selIdx === -1) return;
+            let role = queue[qIdx];
+            let target = deck[selIdx];
 
-            if(role === 'Mafia') {
-                nightState.mafiaTarget = selectedTargetIndex;
-                nightState.currentTurnIdx++;
-                processTurnQueue();
-            } 
-            else if(role === 'Doctor') {
-                nightState.doctorTarget = selectedTargetIndex;
-                nightState.currentTurnIdx++;
-                processTurnQueue();
-            }
-            else if(role === 'Police') {
-                // Show Result Immediately
-                const isMafia = target.role === 'Mafia';
-                const text = isMafia ? "MAFIA" : "CITIZEN"; // Drunkard shows as Citizen
-                const color = isMafia ? "red" : "green";
-                
-                const resTxt = document.getElementById('police-result-text');
-                resTxt.innerText = text;
-                resTxt.style.color = color;
-                
-                document.getElementById('police-modal').classList.add('active');
-                // Modal OK button calls next step
+            if(role==='Mafia') {
+                nightLog.kill = selIdx;
+                finishTurn();
+            } else if(role==='Doctor') {
+                nightLog.save = selIdx;
+                finishTurn();
+            } else if(role==='Police') {
+                let isMafia = target.role === 'Mafia';
+                let result = isMafia ? `This person is Mafia.` : `This person is a Citizen.`;
+                speak(result, () => {
+                    alert(result);
+                    finishTurn();
+                });
             }
         }
 
-        function closePoliceModal() {
-            document.getElementById('police-modal').classList.remove('active');
-            nightState.currentTurnIdx++;
-            processTurnQueue();
+        function finishTurn() {
+            speak(`${queue[qIdx]}, go back to sleep.`, () => {
+                qIdx++;
+                nextInQueue();
+            });
         }
 
-        // --- RESOLUTION & DAY ---
+        // --- RESOLVE ---
         function resolveNight() {
-            let deadName = null;
-
-            // Calc Death
-            if(nightState.mafiaTarget !== null) {
-                if(nightState.mafiaTarget !== nightState.doctorTarget) {
-                    // Kill confirmed
-                    const victim = deck[nightState.mafiaTarget];
-                    victim.status = 'dead';
-                    deadName = victim.name;
-                }
+            let deathName = null;
+            if(nightLog.kill !== null && nightLog.kill !== nightLog.save) {
+                deck[nightLog.kill].alive = false;
+                deathName = deck[nightLog.kill].name;
             }
 
-            // Show Report
-            let msg = deadName ? `Tragedy! ${deadName} was killed last night.` : "Peaceful night. No one died.";
-            document.getElementById('day-report').innerText = msg;
+            showScr('scr-day');
+            renderGrid('day-grid', false);
             
-            renderVillageGrid();
-            showScreen('screen-day');
-            checkWinCondition();
+            let report = deathName ? `A tragedy occurred. ${deathName} was killed.` : `A miracle occurred. No one died last night.`;
+            document.getElementById('day-report').innerText = report;
+            
+            speak(`Everyone, wake up. It is now morning. ${report}`);
+            checkWin();
         }
 
-        function renderVillageGrid() {
-            const grid = document.getElementById('village-grid');
-            grid.innerHTML = '';
-            deck.forEach(p => {
-                const div = document.createElement('div');
-                div.className = `player-btn ${p.status}`;
-                div.innerHTML = `${p.name} <br> <span style="font-size:0.8em; color:#666;">${p.status.toUpperCase()}</span>`;
-                grid.appendChild(div);
-            });
-        }
+        function voteOut() {
+            let n = prompt("Enter the name of the player to eliminate:");
+            let p = deck.find(x => x.name.toLowerCase() === n?.toLowerCase() && x.alive);
+            if(!p) return alert("Player not found or already dead.");
 
-        // --- DAY VOTING ---
-        function startVoting() {
-            const vote = prompt("Enter name of player to hang (must be exact):");
-            if(!vote) return;
-            
-            const pIndex = deck.findIndex(p => p.name.toLowerCase() === vote.toLowerCase() && p.status === 'alive');
-            
-            if(pIndex === -1) {
-                alert("Player not found or already dead.");
-                return;
-            }
-
-            const p = deck[pIndex];
-            
-            // Check Drunkard Win
             if(p.role === 'Drunkard') {
-                showWin(`The Drunkard (${p.name}) Wins!`, "They successfully got themselves hanged.");
-                return;
+                speak(`The village has made a mistake! ${p.name} was the Drunken Idiot. He wins!`);
+                alert(`${p.name} was the Drunkard! He wins the game!`);
+                return location.reload();
             }
 
-            // Hang them
-            p.status = 'dead';
-            alert(`${p.name} has been hanged.`);
-            renderVillageGrid();
-            checkWinCondition();
+            p.alive = false;
+            speak(`${p.name} has been eliminated.`);
+            renderGrid('day-grid', false);
+            checkWin();
         }
 
-        // --- WIN LOGIC ---
-        function checkWinCondition() {
-            const mafiaAlive = deck.filter(p => p.role === 'Mafia' && p.status === 'alive').length;
-            const civsAlive = deck.filter(p => p.role !== 'Mafia' && p.status === 'alive').length;
+        function checkWin() {
+            let maf = deck.filter(x=>x.role==='Mafia' && x.alive).length;
+            let civ = deck.filter(x=>x.role!=='Mafia' && x.alive).length;
 
-            if(mafiaAlive === 0) {
-                showWin("Civilians Win!", "All Mafia have been eliminated.");
-            } else if(mafiaAlive >= civsAlive) {
-                showWin("Mafia Wins!", "They have overtaken the town.");
+            if(maf === 0) {
+                speak("The Mafia has been wiped out. Civilians win!");
+                alert("Civilians Win!");
+                location.reload();
+            } else if(maf >= civ) {
+                speak("The Mafia has overtaken the town. Mafia wins!");
+                alert("Mafia Win!");
+                location.reload();
             }
         }
 
-        function showWin(title, desc) {
-            document.getElementById('win-title').innerText = title;
-            document.getElementById('win-desc').innerText = desc;
-            showScreen('screen-win');
-        }
-
-        // --- UTILS ---
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        function showScr(id) {
+            document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
-
     </script>
 </body>
 </html>
