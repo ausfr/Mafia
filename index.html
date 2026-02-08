@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mafia Moderator Companion</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --accent-color: #ff4444; /* Blood Red */
+            --card-bg: #2d2d2d;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Noir vibe */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 { color: var(--accent-color); text-transform: uppercase; letter-spacing: 2px; }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Setup Phase Styles */
+        .role-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+        
+        input[type="checkbox"] {
+            transform: scale(1.5);
+            accent-color: var(--accent-color);
+        }
+
+        /* Game Phase Styles */
+        .hidden { display: none; }
+        
+        .prompt-box {
+            font-size: 1.2em;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 15px;
+        }
+
+        .timer-display {
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--accent-color);
+        }
+
+        /* Transcription Box */
+        #transcription-log {
+            width: 100%;
+            height: 150px;
+            background: #000;
+            color: #0f0; /* Hacker terminal green */
+            padding: 10px;
+            border: 1px solid #444;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+
+        /* Buttons */
+        button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 4px;
+            transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.8; }
+        button.secondary { background: #555; }
+        button.recording { background: #ff0000; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Mafia Moderator</h1>
+
+    <div class="container">
+        <div id="setup-screen">
+            <h3>Select Active Roles</h3>
+            <div class="role-toggle">
+                <label>Mafia (Aces)</label>
+                <input type="checkbox" id="role-mafia" checked disabled>
+            </div>
+            <div class="role-toggle">
+                <label>Police (Kings)</label>
+                <input type="checkbox" id="role-police" checked>
+            </div>
+            <div class="role-toggle">
+                <label>Doctor (Queens)</label>
+                <input type="checkbox" id="role-doctor" checked>
+            </div>
+            <div class="role-toggle">
+                <label>Mayor (x2 Vote)</label>
+                <input type="checkbox" id="role-mayor">
+            </div>
+            <div class="role-toggle">
+                <label>Drunken Idiot</label>
+                <input type="checkbox" id="role-drunk">
+            </div>
+            <button onclick="startGame()">Start Game</button>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <h2 id="phase-title">Night Phase</h2>
+            <div id="narrator-text" class="prompt-box">
+                </div>
+
+            <div id="timer-container" class="hidden">
+                <div class="timer-display" id="timer">05:00</div>
+            </div>
+
+            <div id="stt-container" class="hidden">
+                <p>Defense Recorder:</p>
+                <div id="transcription-log">Waiting for speech...</div>
+                <button id="btn-record" class="secondary" onclick="toggleRecording()">🎤 Start Recording Defense</button>
+            </div>
+
+            <button id="btn-action" onclick="nextStep()">Read Prompt</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game State ---
+        let roles = {};
+        let stepIndex = 0;
+        let steps = [];
+        let timerInterval;
+
+        // --- Speech API Setup ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+        const synth = window.speechSynthesis;
+        let isRecording = false;
+
+        if (recognition) {
+            recognition.continuous = true;
+            recognition.lang = 'en-US';
+            recognition.onresult = (event) => {
+                const current = event.resultIndex;
+                const transcript = event.results[current][0].transcript;
+                const log = document.getElementById('transcription-log');
+                log.innerHTML += `> ${transcript}<br>`;
+                log.scrollTop = log.scrollHeight;
+            };
+        } else {
+            alert("Speech to Text not supported in this browser. Try Chrome or Safari.");
+        }
+
+        // --- Core Logic ---
+
+        function startGame() {
+            // 1. Capture Roles
+            roles = {
+                police: document.getElementById('role-police').checked,
+                doctor: document.getElementById('role-doctor').checked,
+                mayor: document.getElementById('role-mayor').checked,
+                drunk: document.getElementById('role-drunk').checked
+            };
+
+            // 2. Build the Script based on roles
+            buildScript();
+
+            // 3. Switch Screens
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            // 4. Start
+            updateDisplay();
+        }
+
+        function buildScript() {
+            steps = [];
+            
+            // NIGHT SEQUENCE
+            steps.push({ 
+                phase: "Night Phase", 
+                text: "It is now night. Everyone, go to sleep.",
+                action: "speak" 
+            });
+            
+            steps.push({ 
+                phase: "Night Phase", 
+                text: "Mafia, wake up. Choose your target.",
+                action: "speak" 
+            });
+
+            if (roles.doctor) {
+                steps.push({ 
+                    phase: "Night Phase", 
+                    text: "Mafia, sleep. Doctor, wake up. Who are you protecting?",
+                    action: "speak" 
+                });
+            }
+
+            if (roles.police) {
+                steps.push({ 
+                    phase: "Night Phase", 
+                    text: "Police, wake up. Who do you want to investigate?",
+                    action: "speak" 
+                });
+            }
+
+            // DAY SEQUENCE
+            steps.push({ 
+                phase: "Day Phase", 
+                text: "Police, sleep. It is now morning. Everyone, wake up!",
+                action: "speak" 
+            });
+
+            steps.push({ 
+                phase: "Day Phase: Debate", 
+                text: "The sun has risen. You have 5 minutes to discuss.",
+                action: "timer",
+                time: 300 // 5 mins
+            });
+
+            steps.push({ 
+                phase: "Day Phase: Trial", 
+                text: "The Accused has 30 seconds to plead their case. Recording started...",
+                action: "stt" // Special Speech-to-Text step
+            });
+
+            steps.push({ 
+                phase: "Day Phase: Vote", 
+                text: "On the count of three, thumbs up or down. 1, 2, 3!",
+                action: "speak" 
+            });
+        }
+
+        function updateDisplay() {
+            // Check if loop finished
+            if (stepIndex >= steps.length) {
+                stepIndex = 0; // Loop back to night
+                alert("Day ended. Starting a new Night.");
+            }
+
+            const currentStep = steps[stepIndex];
+            
+            document.getElementById('phase-title').innerText = currentStep.phase;
+            document.getElementById('narrator-text').innerText = currentStep.text;
+            
+            // Reset UI elements
+            document.getElementById('timer-container').classList.add('hidden');
+            document.getElementById('stt-container').classList.add('hidden');
+            document.getElementById('btn-action').innerText = "Next >>";
+
+            // Handle Actions
+            if (currentStep.action === 'timer') {
+                document.getElementById('timer-container').classList.remove('hidden');
+                startTimer(currentStep.time);
+            } else if (currentStep.action === 'stt') {
+                document.getElementById('stt-container').classList.remove('hidden');
+            } else if (currentStep.action === 'speak') {
+                document.getElementById('btn-action').innerText = "Read Aloud & Next";
+            }
+        }
+
+        function nextStep() {
+            const currentStep = steps[stepIndex];
+
+            // 1. Text to Speech Logic
+            if (currentStep.action === 'speak') {
+                const utterance = new SpeechSynthesisUtterance(currentStep.text);
+                utterance.pitch = 0.8; // Lower pitch for ominous effect
+                utterance.rate = 0.9;
+                synth.speak(utterance);
+            }
+
+            // 2. Stop Timer if running
+            clearInterval(timerInterval);
+
+            // 3. Move index
+            stepIndex++;
+            updateDisplay();
+        }
+
+        function startTimer(seconds) {
+            const display = document.getElementById('timer');
+            let remaining = seconds;
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                remaining--;
+                let m = Math.floor(remaining / 60);
+                let s = remaining % 60;
+                display.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                
+                if (remaining <= 0) clearInterval(timerInterval);
+            }, 1000);
+        }
+
+        function toggleRecording() {
+            if (!recognition) return;
+
+            const btn = document.getElementById('btn-record');
+            
+            if (isRecording) {
+                recognition.stop();
+                btn.classList.remove('recording');
+                btn.innerText = "🎤 Start Recording Defense";
+                isRecording = false;
+            } else {
+                recognition.start();
+                btn.classList.add('recording');
+                btn.innerText = "Listening... (Click to Stop)";
+                document.getElementById('transcription-log').innerHTML = ""; // Clear previous
+                isRecording = true;
+            }
+        }
+    </script>
+</body>
+</html>
